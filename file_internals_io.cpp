@@ -6,7 +6,7 @@
 #include <fstream>
 #include <ranges>
 #include <format>
-
+	
 FileInternals::Line::Type validate_ip(std::wstring_view input) {
 
 	IN_ADDR protocol_4{ };
@@ -82,7 +82,6 @@ FileInternals::ReturnType<std::filesystem::path> to_temp(std::filesystem::path o
 }
 
 
-
 namespace FileInternals {
 
 	std::filesystem::path file{ LR"(C:\Windows\System32\drivers\etc\hosts)" };
@@ -92,10 +91,10 @@ namespace FileInternals {
 		if (obj == L"") 
 			obj = file;
 
-		if (!std::filesystem::exists(file))
+		if (!std::filesystem::exists(obj))
 			return std::unexpected(ErrorData{ Message::Type::Info, Error::FILE_MISSING });
 
-		std::wifstream load{ file };
+		std::wifstream load{ obj };
 
 		if (!load)
 			return std::unexpected(ErrorData{ Message::Type::Info,Error::FILE_OPEN_FAILED });

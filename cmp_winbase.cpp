@@ -22,9 +22,8 @@ namespace Component {
 		return DefWindowProcW(hwnd, msg, wParam, lParam);
 	}
 
-
 	LRESULT WindowBase::MessageHandler(UINT msg, WPARAM wParam, LPARAM lParam) {
 		return DefWindowProcW(hwnd_, msg, wParam, lParam);
 	}
 
-} // Namespace Component
+}

@@ -4,6 +4,7 @@
 #include "./message_handler.hpp"
 
 #include <ShlObj.h>
+
 #include <system_error>
 #include <format>
 #include <filesystem>
@@ -12,10 +13,6 @@ namespace FileInternals {
 
 	static std::filesystem::path hosts{ LR"(C:\Windows\System32\drivers\etc\hosts)" };
 
-	enum class CreatePrompt {
-		Yes,
-		No
-	};
 
 	ReturnType<void> validate_hosts() {
 		if (!std::filesystem::exists(hosts))
@@ -28,7 +25,7 @@ namespace FileInternals {
 	}
 
 
-	ReturnType<std::filesystem::path> get_backup_dir(CreatePrompt obj = CreatePrompt::Yes) {
+	ReturnType<std::filesystem::path> get_backup_dir(CreateDirectoryPrompt obj) {
 		
 		std::filesystem::path dir_name{ "DegreeProjectBackup" };
 		std::filesystem::path backup_dir{ };
@@ -45,7 +42,7 @@ namespace FileInternals {
 		CoTaskMemFree(expanded_dir);
 
 		if (!std::filesystem::exists(backup_dir)) {
-			if (obj == CreatePrompt::Yes && 
+			if (obj == CreateDirectoryPrompt::Yes && 
 				Message::display(Message::Type::Confirm, Localization::Text::Confirm_CreateBackupDir) == IDOK) {
 				std::filesystem::create_directory(backup_dir);
 			}
@@ -62,7 +59,7 @@ namespace FileInternals {
 
 	ReturnType<void> backup_exists() {
 
-		auto dir{ get_backup_dir(CreatePrompt::No) };
+		auto dir{ get_backup_dir(CreateDirectoryPrompt::No) };
 
 		if (!dir)
 			return std::unexpected(dir.error());

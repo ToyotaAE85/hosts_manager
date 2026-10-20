@@ -52,6 +52,7 @@ namespace Localization {
 		Menu_File,
 
 		MainMenuWindow,
+		FileOpenDialogTitle,
 
 		Lv_Line,
 		Lv_Ip,
@@ -95,6 +96,8 @@ namespace Localization {
 		Info_BackupDirectoryMissing,
 
 		Info_UserCleanUpAborted,
+
+		Info_BackupLoaded,
 
 		Warning_ReloadWillOverWrite,
 		Warning_ChangesPending,

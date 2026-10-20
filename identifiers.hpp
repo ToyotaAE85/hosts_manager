@@ -40,6 +40,7 @@ namespace WmId {
 		Request_List_Reload,
 		Request_Clear_File,
 		Request_Backup_File,
+		Request_Restore_File,
 		
 		Max = 0xBFFF
 	};

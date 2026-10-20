@@ -10,6 +10,7 @@
 #include <tuple>
 #include <type_traits>
 #include <utility>
+#include <filesystem>
 
 namespace System {
 
@@ -18,12 +19,15 @@ namespace System {
 		std::uint8_t text_size{ };
 		std::uint8_t filter_modes{ };
 		bool changes_performed{ false };
+		std::filesystem::path current_file{ L"" };
 	};
 
 	namespace Setting {
 		struct Language {};
 		struct TextSize {};
 		struct FilterModes {};
+		struct ChangedBehaviour {};
+		struct CurrentFile {};
 	}
 
 	class MainWindow final : Component::WindowBase {
@@ -49,9 +53,11 @@ namespace System {
 			return std::make_tuple(
 				[](const auto& settings, auto tag) {
 					using T = decltype(tag);
-					if constexpr (std::is_same_v<T, Setting::TextSize>)   return settings.text_size;
-					if constexpr (std::is_same_v<T, Setting::Language>)   return settings.language;
-					if constexpr (std::is_same_v<T, Setting::FilterModes>) return settings.filter_modes;
+					if constexpr (std::is_same_v<T, Setting::TextSize>)			return settings.text_size;
+					if constexpr (std::is_same_v<T, Setting::Language>)			return settings.language;
+					if constexpr (std::is_same_v<T, Setting::FilterModes>)		return settings.filter_modes;
+					if constexpr (std::is_same_v<T, Setting::ChangedBehaviour>) return settings.changes_performed;
+					if constexpr (std::is_same_v<T, Setting::CurrentFile>)		return settings.current_file;
 				}(settings_, Tags{})...);
 		}
 
@@ -61,9 +67,11 @@ namespace System {
 
 			([&](auto tag, const auto& value) {
 				using T = decltype(tag);
-				if constexpr (std::is_same_v<T, Setting::TextSize>)   settings_.text_size = value;
-				else if constexpr (std::is_same_v<T, Setting::Language>)   settings_.language = value;
-				else if constexpr (std::is_same_v<T, Setting::FilterModes>) settings_.filter_modes = value;
+				if constexpr (std::is_same_v<T, Setting::TextSize>)				settings_.text_size = value;
+				if constexpr (std::is_same_v<T, Setting::Language>)				settings_.language = value;
+				if constexpr (std::is_same_v<T, Setting::FilterModes>)			settings_.filter_modes = value;
+				if constexpr (std::is_same_v<T, Setting::ChangedBehaviour>)		settings_.changes_performed = value;
+				if constexpr (std::is_same_v<T, Setting::CurrentFile>)			settings_.current_file = value;
 				}(Tags{}, new_values), ...);
 		}
 
@@ -90,10 +98,8 @@ namespace System {
 		void handle_internal_error(T data) {
 			auto [type, err] { data };
 
-			int res{ Message::display(type, Localization::TextMap<decltype(err)>{}.map(err)) };
+			[[maybe_unused]] int res{ Message::display(type, Localization::TextMap<decltype(err)>{}.map(err)) };
 
-			if (type == Message::Type::Warning && res == IDNO)
-				PostMessageW(hwnd_, WM_CLOSE, 0, 0);
 
 			return;
 		}
@@ -103,6 +109,8 @@ namespace System {
 		void handle_file_backup();
 
 		void handle_file_cleanup();
+
+		void handle_file_restore();
 
 	protected:
 		LRESULT MessageHandler(UINT msg, WPARAM wParam, LPARAM lParam) override;

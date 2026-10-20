@@ -197,6 +197,10 @@ namespace Component {
 				PostMessageW(parent_, (UINT)WmId::Custom::Request_Backup_File, 0, 0);
 				return 0;
 			}
+			case WmId::MenuBar::File_RestoreFile: {
+				PostMessageW(parent_, (UINT)WmId::Custom::Request_Restore_File, 0, 0);
+				return 0;
+			}
 			default: break;
 		}
 

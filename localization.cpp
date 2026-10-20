@@ -47,13 +47,14 @@ namespace Localization {
 
 		{L"Language", L"Idioma"},
 		{L"Text size", L"Tamaño del texto"},
-		{L"Reload list", L"Recargar lista"},
+		{L"Reload from file", L"Recargar desde el archivo"},
 		{L"Filter...", L"Filtrar..."},
 
 		{L"Settings", L"Configuración"},
 		{L"File", L"Archivo"},
 
 		{L"Degree Project | Hosts File Manager", L"Proyecto de titulación | Administrador del archivo hosts"},
+		{L"Load backup file ", L"Cargar un archivo de respaldo"},
 
 		{L"Line", L"Línea"},
 		{L"IP", L"IP"},
@@ -85,26 +86,29 @@ namespace Localization {
 		{L"Screen dimensions retrieval failed", L"No se pudo obtener las dimensiones de la pantalla"},
 		{L"Requested font couldn't be applied to UI", L"El tipo de letra solicitado no pudo ser aplicado a la IU"},
 		{L"Requested font couldn't be initialized", L"El tipo de letra solicitado no pudo iniciarse"},
-		
+
 		{L"The Roaming AppData folder could not be found", L"No se pudo encontrar la carpeta Roaming de AppData"},
 		{L"Backup directory failed expected type, not a directory", L"No se esperaba el tipo de la carpeta para copias de seguridad, se esperaba una carpeta"},
 
 		//info_
 		{L"Language updated", L"Idioma actualizado"},
 		{L"List rows filters updated", L"Filtros de las filas de la lista actualizadas"},
-		{L"The list has been reloaded from the file", L"La lista ha sido recargada desde el archivo."},
-		
-		{L"You won't be able to perform backups without a valid backup directory", L"No podrá realizar copias de seguridad sin un directorio de copia de seguridad válido"},
+		{L"The list has been reloaded from the hosts file", L"La lista ha sido recargada desde el archivo hosts."},
+
+		{L"You won't be able to perform/load backups without a valid backup directory", L"No podrá realizar/cargar copias de seguridad sin un directorio de copias de seguridad válido"},
 		{L"Hosts file has been backed up", L"Se le ha elaborado una copia de seguridad al archivo hosts"},
 		{L"Hosts file has been cleared", L"El archivo hosts ha sido vaciado"},
 		{L"Hosts file is currently empty, requested operation ignored", L"El archivo hosts esta vacio, operacion solicitada ignorada"},
 		{L"The backup directory is missing", L"No se encuentra el directorio de copias de seguridad"},
-		{L"Hosts file cleanup has been aborted by user prompt", L"La operacion para limpiar el archivo hosts ha sido abortada por el usuario"},
+
+		{L"Operation aborted by user", L"La operacion ha sido abortada por el usuario"},
+
+		{L"The selected backup file has been loaded into memory", L"La copia de seguridad seleccionada ha sido cargada en la memoria"},
 
 		//warning_
 		{L"Reloading the list will overwrite any unsaved changes", L"Recargar la lista sobreescribira cambios no guardados"},
 		{L"Pending changes detected, they will be permanently lost if you don't save", L"Se detectaron cambios pendientes, se perderán permanentemente si no se guardan"},
-		{L"This operation will erase the contents of the hosts file, this action is irreversible", L"Esta operación borrará el contenido del archivo hosts, esta acción es irreversible"},
+		{L"This operation will erase the contents of the hosts file, this is irreversible", L"Esta operación borrará el contenido del archivo hosts, esto es irreversible"},
 
 		{L"Couldn't locate hosts file in its default directory", L"No se pudo localizar el archivo hosts en su directorio por default"},
 		{L"Couldn't copy the hosts file, verify file permissions", L"No se pudo copiar el archivo hosts, revise los permisos del archivo"},
@@ -112,7 +116,7 @@ namespace Localization {
 		{L"No backups have been located, proceed with caution", L"No se han encontrado copias de seguridad, proceda con precaucion"},
 
 		//confirm_
-		{L"Backup directory not found, would you like to create one?", L"No se encontró el directorio de copia de seguridad, ¿desea crear uno?"},
+		{L"Backup directory not found, would you like to create one?", L"No se encontró el directorio para copias de seguridad, ¿desea crear uno?"},
 
 		}};
 

@@ -10,6 +10,11 @@
 
 namespace FileInternals {
 
+	enum class CreateDirectoryPrompt {
+		Yes,
+		No
+	};
+
 	enum class Error {
 		USER_DECLINED_CREATION,
 		ROAMING_APPDATA_NOT_FOUND,
@@ -60,6 +65,8 @@ namespace FileInternals {
 	ReturnType<void> backup_file();
 
 	ReturnType<void> delete_file_contents();
+
+	ReturnType<std::filesystem::path> get_backup_dir(CreateDirectoryPrompt obj = CreateDirectoryPrompt::Yes);
 
 
 	ReturnType<std::vector<Line::Data>> load_data(std::filesystem::path path = L"");

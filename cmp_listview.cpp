@@ -130,9 +130,21 @@ namespace Component {
 
 	void ListView::rewrite_data() {
 
-		auto data{ FileInternals::load_data() };
+		using namespace System;
+
+		auto pWnd{ reinterpret_cast<MainWindow*>(GetPropW(GetParent(hwnd_), L"MAINMENUWINDOW")) };
+
+		if (!pWnd)
+			Message::display(Message::Type::CriticalError, Localization::Text::CriticalError_HandleFailed);
+
+		// Type::CriticalError calls for std::terminate so this is ok
+		const auto& [file] { pWnd->request_settings<Setting::CurrentFile>() };
+
+		auto data{ FileInternals::load_data(file)};
 
 		if (!data) {
+			
+			// Deal with the error later
 			return;
 		}
 
