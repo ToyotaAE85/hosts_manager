@@ -52,7 +52,9 @@ namespace Localization {
 		Menu_File,
 
 		MainMenuWindow,
+
 		FileOpenDialogTitle,
+		FileOpenDialogBackupName,
 
 		Lv_Line,
 		Lv_Ip,
@@ -64,6 +66,7 @@ namespace Localization {
 		Ht_Comment,
 		Ht_Blank,
 		Ht_Invalid,
+
 
 		MessageType_CriticalError,
 		MessageType_Error,

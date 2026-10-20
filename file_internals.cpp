@@ -42,15 +42,16 @@ namespace FileInternals {
 		CoTaskMemFree(expanded_dir);
 
 		if (!std::filesystem::exists(backup_dir)) {
-			if (obj == CreateDirectoryPrompt::Yes && 
+			if (obj == CreateDirectoryPrompt::Yes &&
 				Message::display(Message::Type::Confirm, Localization::Text::Confirm_CreateBackupDir) == IDOK) {
 				std::filesystem::create_directory(backup_dir);
+			}
+			else if (obj == CreateDirectoryPrompt::No) {
+				return std::unexpected(ErrorData{ Message::Type::Info, Error::BACKUP_DIRECTORY_MISSING });
 			}
 			else {
 				return std::unexpected(ErrorData{ Message::Type::Info, Error::USER_DECLINED_CREATION });
 			}
-
-			return std::unexpected(ErrorData{ Message::Type::Info, Error::BACKUP_DIRECTORY_MISSING });
 		}
 
 		return backup_dir;

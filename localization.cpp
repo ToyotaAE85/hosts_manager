@@ -47,14 +47,16 @@ namespace Localization {
 
 		{L"Language", L"Idioma"},
 		{L"Text size", L"Tamaño del texto"},
-		{L"Reload from file", L"Recargar desde el archivo"},
+		{L"Reload from hosts file", L"Recargar desde el archivo hosts"},
 		{L"Filter...", L"Filtrar..."},
 
 		{L"Settings", L"Configuración"},
 		{L"File", L"Archivo"},
 
 		{L"Degree Project | Hosts File Manager", L"Proyecto de titulación | Administrador del archivo hosts"},
+		
 		{L"Load backup file ", L"Cargar un archivo de respaldo"},
+		{L"Backup files...", L"Copias de seguridad"},
 
 		{L"Line", L"Línea"},
 		{L"IP", L"IP"},

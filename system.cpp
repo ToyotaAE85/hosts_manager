@@ -114,24 +114,30 @@ namespace System {
 
 				if (!backup_dir) {
 					handle_internal_error(backup_dir.error());
-
 					pFileMenu->Release();
 					CoUninitialize();
-
 					return;
 				}
 
 				pFileMenu->SetTitle(get_text(Text::FileOpenDialogTitle).data());
 				IShellItem* psiDefaultFolder{};
 
-				hr = SHCreateItemFromParsingName(backup_dir.value().wstring().data(), nullptr, IID_PPV_ARGS(&psiDefaultFolder));
+				hr = SHCreateItemFromParsingName(backup_dir.value().wstring().data(), 
+					nullptr, IID_PPV_ARGS(&psiDefaultFolder));
 
 				if (SUCCEEDED(hr)) {
-					pFileMenu->SetFolder(psiDefaultFolder);
+					hr = pFileMenu->SetFolder(psiDefaultFolder);
 					psiDefaultFolder->Release();
+
 				}
 
-				hr = pFileMenu->Show(nullptr);
+				COMDLG_FILTERSPEC flSpec{
+					get_text(Text::FileOpenDialogBackupName).data(), L"*.bak"
+				};
+
+				pFileMenu->SetFileTypes(1, &flSpec);
+
+				hr = pFileMenu->Show(hwnd_);
 
 				if (SUCCEEDED(hr)) {
 					IShellItem* psiItem{};
@@ -152,12 +158,10 @@ namespace System {
 						psiItem->Release();
 					}
 				}
-
 				pFileMenu->Release();
 			}
+			CoUninitialize();
 		}
-
-		CoUninitialize();
 	}
 
 
