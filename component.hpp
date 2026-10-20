@@ -2,10 +2,11 @@
 
 #include "./win32api.hpp"
 
-#include "./hosts.hpp"
 #include "./localization.hpp"
 #include "./identifiers.hpp"
 
+#include "./message_handler.hpp"
+#include "./file_internals.hpp"
 
 #include <CommCtrl.h>
 #pragma comment(lib, "comctl32.lib")
@@ -14,20 +15,6 @@
 #include <vector>
 #include <concepts>
 
-
-namespace Message {
-
-	enum class Type {
-		CriticalError,
-		Error,
-		Warning,
-		Info,
-		Confirm,
-	};
-
-	int display(Type error, Localization::Text error_text);
-
-}
 
 namespace Screen {
 
@@ -164,7 +151,7 @@ namespace Component {
 	class ListView {
 
 		HWND hwnd_{ };
-		std::vector<Hosts::Line::Data> line_data_{ };
+		std::vector<FileInternals::Line::Data> line_data_{ };
 
 	public:
 
@@ -237,18 +224,3 @@ namespace Component {
 	};
 
 }
-
-
-template <>
-struct Localization::TextMap<Message::Type> {
-	static constexpr Localization::Text map(Message::Type type) noexcept {
-		switch (type) {
-			case Message::Type::CriticalError:	return Localization::Text::MessageType_CriticalError;
-			case Message::Type::Error:			return Localization::Text::MessageType_Error;
-			case Message::Type::Warning:		return Localization::Text::MessageType_Warning;
-			case Message::Type::Info:			return Localization::Text::MessageType_Info;
-			case Message::Type::Confirm:		return Localization::Text::MessageType_Confirm;
-			[[unlikely]] default:				return Localization::Text::NO_TEXT;
-		}
-	}
-};

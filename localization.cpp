@@ -75,7 +75,7 @@ namespace Localization {
 		//misc_
 		{L"The application cannot continue and will close", L"El programa no puede continuar y se cerrará"},
 		{L"The application may not function as expected", L"Es posible que la aplicación no funcione como se espera"},
-		{L"Continue program execution?", L"¿Continuar la ejecucion del programa?"},
+		{L"Continue?", L"¿Continuar?"},
 
 		//criterror_
 		{L"UI element failed to initialize", L"Elemento de IU no se ha podido inicializar"},
@@ -87,15 +87,19 @@ namespace Localization {
 		{L"Requested font couldn't be initialized", L"El tipo de letra solicitado no pudo iniciarse"},
 		
 		{L"The Roaming AppData folder could not be found", L"No se pudo encontrar la carpeta Roaming de AppData"},
+		{L"Backup directory failed expected type, not a directory", L"No se esperaba el tipo de la carpeta para copias de seguridad, se esperaba una carpeta"},
 
 		//info_
 		{L"Language updated", L"Idioma actualizado"},
-		{L"List rows updated", L"Filas de la lista actualizadas"},
+		{L"List rows filters updated", L"Filtros de las filas de la lista actualizadas"},
 		{L"The list has been reloaded from the file", L"La lista ha sido recargada desde el archivo."},
 		
 		{L"You won't be able to perform backups without a valid backup directory", L"No podrá realizar copias de seguridad sin un directorio de copia de seguridad válido"},
 		{L"Hosts file has been backed up", L"Se le ha elaborado una copia de seguridad al archivo hosts"},
 		{L"Hosts file has been cleared", L"El archivo hosts ha sido vaciado"},
+		{L"Hosts file is currently empty, requested operation ignored", L"El archivo hosts esta vacio, operacion solicitada ignorada"},
+		{L"The backup directory is missing", L"No se encuentra el directorio de copias de seguridad"},
+		{L"Hosts file cleanup has been aborted by user prompt", L"La operacion para limpiar el archivo hosts ha sido abortada por el usuario"},
 
 		//warning_
 		{L"Reloading the list will overwrite any unsaved changes", L"Recargar la lista sobreescribira cambios no guardados"},
@@ -105,6 +109,7 @@ namespace Localization {
 		{L"Couldn't locate hosts file in its default directory", L"No se pudo localizar el archivo hosts en su directorio por default"},
 		{L"Couldn't copy the hosts file, verify file permissions", L"No se pudo copiar el archivo hosts, revise los permisos del archivo"},
 		{L"Couldn't clear the hosts file, verify file permissions", L"No se pudo vaciar el archivo hosts, revise los permisos del archivo"},
+		{L"No backups have been located, proceed with caution", L"No se han encontrado copias de seguridad, proceda con precaucion"},
 
 		//confirm_
 		{L"Backup directory not found, would you like to create one?", L"No se encontró el directorio de copia de seguridad, ¿desea crear uno?"},

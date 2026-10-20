@@ -110,10 +110,9 @@ namespace Component {
 			pWnd->request_settings<Setting::Language, Setting::TextSize, Setting::FilterModes>()
 		};
 
-
 		switch (language) {
-		case Language::Type::Spanish: check_menu_item(hMenu, WmId::MenuBar::Language_Spanish, true); break;
-		default: check_menu_item(hMenu, WmId::MenuBar::Language_English, true); break;
+			case Language::Type::Spanish: check_menu_item(hMenu, WmId::MenuBar::Language_Spanish, true); break;
+			default: check_menu_item(hMenu, WmId::MenuBar::Language_English, true); break;
 		}
 
 		check_menu_item(hMenu, WmId::MenuBar::Filter_Invalid, filtermodes & 1);
@@ -191,10 +190,7 @@ namespace Component {
 			}
 
 			case WmId::MenuBar::File_EmptyFile: {
-				if (Message::display(Message::Type::Warning,
-					Localization::Text::Warning_FileDeletionIrrevertible) == IDYES)
-					PostMessageW(parent_, (UINT)WmId::Custom::Request_Clear_File, 0, 0);
-
+				PostMessageW(parent_, (UINT)WmId::Custom::Request_Clear_File, 0, 0);
 				return 0;
 			}
 			case WmId::MenuBar::File_BackupFile: {

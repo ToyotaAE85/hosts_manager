@@ -2,6 +2,7 @@
 
 #include "./system.hpp"
 #include "./localization.hpp"
+#include "./file_internals.hpp"
 
 #include <ranges>
 #include <algorithm>
@@ -56,15 +57,15 @@ namespace Component {
 				auto [_, line] { p };
 
 				if ((filter_modes & (1 << 0)) &&
-					line.type == Hosts::Line::Type::INVALID)
+					line.type == FileInternals::Line::Type::INVALID)
 					return false;
 
 				if ((filter_modes & (1 << 1)) &&
-					line.type == Hosts::Line::Type::BLANK)
+					line.type == FileInternals::Line::Type::BLANK)
 					return false;
 
 				if ((filter_modes & (1 << 2)) &&
-					line.type == Hosts::Line::Type::COMMENT)
+					line.type == FileInternals::Line::Type::COMMENT)
 					return false;
 
 				return true;
@@ -128,10 +129,11 @@ namespace Component {
 
 
 	void ListView::rewrite_data() {
-		auto data{ Hosts::load_data() };
+
+		auto data{ FileInternals::load_data() };
 
 		if (!data) {
-			// handle error later
+			return;
 		}
 
 		line_data_ = std::move(data.value());

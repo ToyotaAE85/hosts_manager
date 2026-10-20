@@ -1,7 +1,6 @@
 #include "./system.hpp"
 
 #include "./identifiers.hpp"
-#include "./hosts.hpp"
 #include "./file_internals.hpp"
 
 #include <CommCtrl.h>
@@ -179,6 +178,13 @@ LRESULT System::MainWindow::MessageHandler(UINT msg, WPARAM wParam, LPARAM lPara
 			return 0;
 		}
 		case (UINT)WmId::Custom::Request_List_Reload: {
+
+			const auto hosts_int{ FileInternals::validate_hosts() };
+
+			if (!hosts_int) {
+				handle_internal_error(hosts_int.error());
+				return 0;
+			}
 
 			if (settings_.changes_performed) 
 				if (Message::display(Message::Type::Warning, Localization::Text::Warning_ReloadWillOverWrite) == IDNO) 

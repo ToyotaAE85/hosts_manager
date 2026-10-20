@@ -82,6 +82,7 @@ namespace Localization {
 		Error_FontCreationFailed,
 		
 		Error_RoamingAppDataNotFound,
+		Error_BackupNotDirectory,
 
 		Info_LanguageUpdate,
 		Info_ListRowsUpdate,
@@ -90,6 +91,10 @@ namespace Localization {
 		Info_NoBackupsWithoutDir,
 		Info_HostsFileBacked,
 		Info_HostsFileCleaned,
+		Info_HostsFileEmpty,
+		Info_BackupDirectoryMissing,
+
+		Info_UserCleanUpAborted,
 
 		Warning_ReloadWillOverWrite,
 		Warning_ChangesPending,
@@ -98,6 +103,7 @@ namespace Localization {
 		Warning_HostsFileMissing,
 		Warning_HostsFileCopyFailed,
 		Warning_HostsFileClearFailed,
+		Warning_BackupNotFound,
 
 		Confirm_CreateBackupDir,
 
