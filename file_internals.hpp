@@ -8,9 +8,13 @@
 #include <vector>
 #include <filesystem>
 
+
 namespace FileInternals {
 
+	inline const std::filesystem::path dir_name{ "DegreeProjectBackup" };
+
 	inline std::filesystem::path hosts{ LR"(C:\Windows\System32\drivers\etc\hosts)" };
+
 
 	enum class CreateDirectoryPrompt {
 		Yes,
@@ -69,6 +73,13 @@ namespace FileInternals {
 	ReturnType<void> delete_file_contents();
 
 	ReturnType<std::filesystem::path> get_backup_dir(CreateDirectoryPrompt obj = CreateDirectoryPrompt::Yes);
+
+	// might need to refactor this weirdness..
+	// set a target file then use this as a load_data parameter... ????
+	// this function should be strictly used as a parameter for load_data mind you
+	std::filesystem::path from_target_file();
+
+	ReturnType<void> set_target_file(std::filesystem::path new_path);
 
 
 	ReturnType<std::vector<Line::Data>> load_data(std::filesystem::path path = L"");

@@ -1,4 +1,7 @@
-#include "./component.hpp"
+#include "./screen.hpp"
+
+#include "./localization.hpp"
+#include "./message_handler.hpp"
 
 
 namespace Screen {
@@ -61,4 +64,4 @@ namespace Screen {
 		return (dim_data * prc.prc_ + 50) / 100;
 	}
 
-} //Namespace Screen
+}

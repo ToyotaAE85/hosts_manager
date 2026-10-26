@@ -1,6 +1,6 @@
 #include "./file_internals.hpp"
 
-#include "./auxiliary.hpp"
+#include "./time.hpp"
 #include "./message_handler.hpp"
 
 #include <ShlObj.h>
@@ -10,6 +10,8 @@
 #include <filesystem>
 
 namespace FileInternals {
+
+	std::filesystem::path current_file{ };
 
 	ReturnType<void> validate_hosts() {
 		if (!std::filesystem::exists(hosts))
@@ -24,7 +26,6 @@ namespace FileInternals {
 
 	ReturnType<std::filesystem::path> get_backup_dir(CreateDirectoryPrompt obj) {
 		
-		std::filesystem::path dir_name{ "DegreeProjectBackup" };
 		std::filesystem::path backup_dir{ };
 
 		LPWSTR expanded_dir{ };
@@ -55,6 +56,7 @@ namespace FileInternals {
 	}
 
 
+	// we only check IF we have ANY valid backup files,
 	ReturnType<void> backup_exists() {
 
 		auto dir{ get_backup_dir(CreateDirectoryPrompt::No) };
@@ -92,7 +94,7 @@ namespace FileInternals {
 
 		std::error_code ec{ };
 		std::filesystem::copy_file(hosts, backup_dir.value() 
-			/ std::format(L"hosts{}.bak", Auxiliary::Time::stamp()), ec);
+			/ std::format(L"hosts{}.bak", Time::stamp()), ec);
 
 		if (ec)
 			return std::unexpected(ErrorData{ Message::Type::Warning, Error::HOSTS_FILE_COPY_FAILED });
@@ -128,6 +130,18 @@ namespace FileInternals {
 		if (ec) 
 			return std::unexpected(ErrorData{ Message::Type::Warning, Error::HOSTS_FILE_MISSING });
 
+		return {};
+	}
+
+	std::filesystem::path from_target_file() {
+		return current_file;
+	}
+
+	ReturnType<void> set_target_file(std::filesystem::path new_path) {
+		if (!std::filesystem::exists(new_path))
+			return std::unexpected(ErrorData{ Message::Type::Warning, Error::FILE_MISSING });
+		
+		current_file = new_path;
 		return {};
 	}
 }

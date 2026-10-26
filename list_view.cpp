@@ -1,13 +1,13 @@
-#include "./component.hpp"
+#include "./list_view.hpp"
 
-#include "./system.hpp"
 #include "./localization.hpp"
-#include "./file_internals.hpp"
+#include "./win32_utility.hpp"
 
 #include <ranges>
 #include <algorithm>
 
-namespace Component {
+namespace List {
+
 	HWND ListView::hwnd() const {
 		return hwnd_;
 	}
@@ -20,12 +20,12 @@ namespace Component {
 
 		InitCommonControlsEx(&icex);
 
-		hwnd_ = Utility::create_window({
+		hwnd_ = Win32Utility::create_window({
 				.className = WC_LISTVIEW,
 				.style = WS_CHILD | WS_VISIBLE | LVS_REPORT
 						| LVS_SINGLESEL | LVS_NOSORTHEADER | LVS_EDITLABELS,
 				.hParent = parent,
-				.id = reinterpret_cast<HMENU>(10001),
+				.id = 10001,
 				.hInst = GetModuleHandleW(NULL),
 			});
 
@@ -37,37 +37,31 @@ namespace Component {
 		return *this;
 	}
 
+	ListView& ListView::update_filters(int filtermodes) {
+		filtermodes = filtermodes;
+		return *this;
+	}
 
 	auto ListView::retrieve_filtered_view() const {
-
-		using namespace System;
-
-		auto pWnd{ reinterpret_cast<MainWindow*>(GetPropW(GetParent(hwnd_), L"MAINMENUWINDOW")) };
-
-		if (!pWnd)
-			Message::display(Message::Type::CriticalError, Localization::Text::CriticalError_HandleFailed);
-
-		// first 3 bits, [comments][blank][invalid] 
-		const auto& [filter_modes] { pWnd->request_settings<Setting::FilterModes>() };
 
 		auto vw{
 			line_data_
 			| std::views::enumerate
-			| std::views::filter([filter_modes](const auto& p) {
+			| std::views::filter([=](const auto& p) {
 				const auto& [idx, line] { p };
 
 				if (line.type == FileInternals::Line::Type::DELETED)
 					return false;
 
-				if ((filter_modes & (1 << 0)) &&
+				if ((filtermodes_ & (1 << 0)) &&
 					line.type == FileInternals::Line::Type::INVALID)
 					return false;
 
-				if ((filter_modes & (1 << 1)) &&
+				if ((filtermodes_ & (1 << 1)) &&
 					line.type == FileInternals::Line::Type::BLANK)
 					return false;
 
-				if ((filter_modes & (1 << 2)) &&
+				if ((filtermodes_ & (1 << 2)) &&
 					line.type == FileInternals::Line::Type::COMMENT)
 					return false;
 
@@ -92,18 +86,6 @@ namespace Component {
 
 			auto cnt_text{ std::to_wstring(l_idx + 1) };
 
-			// we shouldnt format here, let the formatter do its job on fileinternals
-			std::wstring ip{ 
-				line.type == FileInternals::Line::Type::COMMENT ? 
-					L"" : line.ip
-			};
-
-			std::wstring fmt_dom{ 
-				std::format(L"{} {}", 
-					line.type == FileInternals::Line::Type::COMMENT ?  
-					line.ip : L"", line.domains
-				) };
-
 			LVITEMW lvItem{ };
 			lvItem.mask = LVIF_TEXT;
 			lvItem.iItem = idx;
@@ -115,7 +97,7 @@ namespace Component {
 
 			lvItem.iItem = in_idx;
 			lvItem.iSubItem = 1;
-			lvItem.pszText = const_cast<LPWSTR>(ip.c_str());
+			lvItem.pszText = const_cast<LPWSTR>(line.ip.c_str());
 			ListView_SetItem(hwnd_, &lvItem);
 
 			lvItem.iItem = in_idx;
@@ -125,7 +107,7 @@ namespace Component {
 
 			lvItem.iItem = in_idx;
 			lvItem.iSubItem = 3;
-			lvItem.pszText = const_cast<LPWSTR>(fmt_dom.c_str());
+			lvItem.pszText = const_cast<LPWSTR>(line.domains.c_str());
 			ListView_SetItem(hwnd_, &lvItem);
 		}
 
@@ -146,22 +128,10 @@ namespace Component {
 
 	void ListView::rewrite_data() {
 
-		using namespace System;
-
-		// get rid of all of these instances, components in this case, shouldnt be
-		// aware of the coordinator
-		auto pWnd{ reinterpret_cast<MainWindow*>(GetPropW(GetParent(hwnd_), L"MAINMENUWINDOW")) };
-
-		if (!pWnd)
-			Message::display(Message::Type::CriticalError, Localization::Text::CriticalError_HandleFailed);
-
-		// Type::CriticalError calls for std::terminate so this is ok
-		const auto& [file] { pWnd->request_settings<Setting::CurrentFile>() };
-
-		auto data{ FileInternals::load_data(file)};
+		auto data{ FileInternals::load_data(FileInternals::from_target_file()) };
 
 		if (!data) {
-			// we should def deal wt this later
+			// we should def deal wt this, later tho lmao
 			// Deal with the error later
 			return;
 		}

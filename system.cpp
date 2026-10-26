@@ -2,11 +2,8 @@
 
 #include "./identifiers.hpp"
 #include "./file_internals.hpp"
-#include "./auxiliary.hpp"
 
-#pragma comment(lib, "comctl32.lib")
 #include <CommCtrl.h>
-
 #include <ShObjIdl.h>
 
 namespace System {
@@ -17,8 +14,7 @@ namespace System {
 
 		Language::set(Language::Type::Spanish);
 
-		settings_.language = Language::Type::Spanish;
-		settings_.text_size = 16;
+		inner_settings_.textsize = 16;
 
 		WNDCLASSEXW wnd{ };
 		wnd.lpfnWndProc = BaseProc;
@@ -26,9 +22,10 @@ namespace System {
 		wnd.hInstance = hInstance_;
 		wnd.lpszClassName = L"MAINMENUWINDOW";
 
-		RegisterClassExW(&wnd);
+		if (!RegisterClassExW(&wnd))
+			Message::display(Message::Type::CriticalError, Localization::Text::CriticalError_UIFailed);
 
-		Utility::create_window({
+		Win32Utility::create_window({
 			.className = L"MAINMENUWINDOW",
 			.windowName = Localization::get_text(Localization::Text::MainMenuWindow),
 			.style = WS_OVERLAPPEDWINDOW,
@@ -44,7 +41,7 @@ namespace System {
 
 		using namespace List;
 		using namespace Localization;
-		using Screen::operator|;
+		using namespace Screen;
 
 		screenData_.generate(hwnd_);
 
@@ -52,20 +49,19 @@ namespace System {
 
 		listView_.create(hwnd_).populate_columns(
 			ColumnData{ .name = get_text(Text::Lv_Line), .fmt = LVCFMT_CENTER, 
-				.size = screenData_ | Screen::From::Window | Screen::Dimension::Width | Screen::Percentage(5) },
+				.size = screenData_ | From::Window | Dimension::Width | Percentage(5) },
 			
 			ColumnData{ .name = get_text(Text::Lv_Ip), .fmt = LVCFMT_CENTER, 
-			.size = screenData_ | Screen::From::Window | Screen::Dimension::Width | Screen::Percentage(5) },
+			.size = screenData_ | From::Window | Dimension::Width | Percentage(5) },
 			
 			ColumnData{ .name = get_text(Text::Lv_Type), .fmt = LVCFMT_CENTER, 
-			.size = screenData_ | Screen::From::Window | Screen::Dimension::Width | Screen::Percentage(5) },
+			.size = screenData_ | From::Window | Dimension::Width | Percentage(5) },
 			
 			ColumnData{ .name = get_text(Text::Lv_Domain), .fmt = LVCFMT_LEFT, 
-			.size = screenData_ | Screen::From::Window | Screen::Dimension::Width | Screen::Percentage(70) }
+			.size = screenData_ | From::Window | Dimension::Width | Percentage(70) }
 		).populate_rows(PopulateRows::FromFile);
 
-
-		initialize_controls();
+		buttons_.initialize(hwnd_, screenData_);
 
 		//initialize_fonts();
 
@@ -97,7 +93,7 @@ namespace System {
 
 		using namespace Localization;
 
-		if (settings_.changes_performed) {
+		if (inner_settings_.changes_performed) {
 			if (Message::display(Message::Type::Warning, Text::Warning_ChangesPending) == IDNO)
 				return;
 		}
@@ -150,11 +146,16 @@ namespace System {
 						hr = psiItem->GetDisplayName(SIGDN_FILESYSPATH, &pszFilePath);
 
 						if (SUCCEEDED(hr)) {
-							settings_.current_file = pszFilePath;
+							auto res{ FileInternals::set_target_file(pszFilePath) };
 							CoTaskMemFree(pszFilePath);
 
-							listView_.refresh_list(List::PopulateRows::FromFile);
-							Message::display(Message::Type::Info, Text::Info_BackupLoaded);
+							if (!res) {
+								handle_internal_error(res.error());
+							}
+							else {
+								listView_.refresh_list(List::PopulateRows::FromFile);
+								Message::display(Message::Type::Info, Text::Info_BackupLoaded);
+							}
 						}
 
 						psiItem->Release();
@@ -166,62 +167,12 @@ namespace System {
 		}
 	}
 
-	void MainWindow::pending_changes(bool value) {
-		// we have pending changes
-		EnableWindow(control_apply_, !value);
-		EnableWindow(control_discard_, value);
-		EnableWindow(control_save_, value);
-
-		settings_.changes_performed = value;
+	int MainWindow::flush_dns() {
+		return 0;
 	}
 
-	void MainWindow::initialize_controls() {
-		
-		using namespace Screen;
-		using namespace Utility;
-
-		CreateWindowData base {
-			.exStyle = WS_EX_WINDOWEDGE,
-			.className = L"BUTTON",
-			.style = WS_CHILD | WS_VISIBLE | WS_TABSTOP | BS_VCENTER | BS_CENTER | BS_MULTILINE | BS_PUSHBUTTON,
-			.y = screenData_ | From::Window | Dimension::Height | Percentage(90),
-			.width = screenData_ | From::Window | Dimension::Width | Percentage(12),
-			.height = screenData_ | From::Window | Dimension::Height | Percentage(6),
-			.hParent = hwnd_,
-			.hInst = hInstance_,
-		};		
-		
-
-		base.windowName = Localization::get_text(Localization::Text::Control_NewEntry);
-		base.x = screenData_ | From::Window | Dimension::Width | Percentage(5);
-		base.id = (HMENU)WmId::Control::NewEntry;
-		control_new_ = create_window(base);
-
-
-		base.windowName = Localization::get_text(Localization::Text::Control_DeleteEntry);
-		base.x = screenData_ | From::Window | Dimension::Width | Percentage(20);
-		base.id = (HMENU)WmId::Control::DeleteEntry;
-		control_delete_ = create_window(base);
-
-
-		base.windowName = Localization::get_text(Localization::Text::Control_ApplyFilter);
-		base.x = screenData_ | From::Window | Dimension::Width | Percentage(44);
-		base.id = (HMENU)WmId::Control::ApplyFilter;
-		control_apply_ = create_window(base);
-
-
-		base.windowName = Localization::get_text(Localization::Text::Control_SaveEntry);
-		base.x = screenData_ | From::Window | Dimension::Width | Percentage(68);
-		base.id = (HMENU)WmId::Control::SaveEntry;
-		base.style |= WS_DISABLED;
-		control_save_ = create_window(base);
-
-
-		base.windowName = Localization::get_text(Localization::Text::Control_DiscardChanges);
-		base.x = screenData_ | From::Window | Dimension::Width | Percentage(83);
-		base.id = (HMENU)WmId::Control::DiscardChanges;
-		base.style |= WS_DISABLED;
-		control_discard_ = create_window(base);
+	void MainWindow::pending_changes(bool value) {
+		inner_settings_.changes_performed = value;
 	}
 
 	LRESULT MainWindow::MessageHandler(UINT msg, WPARAM wParam, LPARAM lParam) {
@@ -244,20 +195,8 @@ namespace System {
 			}
 			case WM_SIZE: {
 
-				using namespace Screen; // needed for | overloads.
+				using namespace Screen;
 				screenData_.regenerate_client_size(LOWORD(lParam), HIWORD(lParam));
-
-				const int b_y{
-					screenData_ | From::Window | Dimension::Height | Percentage(90)
-				};
-
-				const int b_w{
-					screenData_ | From::Window | Dimension::Width | Percentage(12)
-				};
-
-				const int b_h{
-					screenData_ | From::Window | Dimension::Height | Percentage(6)
-				};
 
 				MoveWindow(
 					listView_.hwnd(),
@@ -268,51 +207,7 @@ namespace System {
 					TRUE
 				);
 
-
-				MoveWindow(
-					control_new_,
-					screenData_ | From::Window | Dimension::Width | Percentage(5),
-					b_y,
-					b_w,
-					b_h,
-					TRUE
-				);
-
-				MoveWindow(
-					control_delete_,
-					screenData_ | From::Window | Dimension::Width | Percentage(20),
-					b_y,
-					b_w,
-					b_h,
-					TRUE
-				);
-
-				MoveWindow(
-					control_apply_,
-					screenData_ | From::Window | Dimension::Width | Percentage(44),
-					b_y,
-					b_w,
-					b_h,
-					TRUE
-				);
-
-				MoveWindow(
-					control_save_,
-					screenData_ | From::Window | Dimension::Width | Percentage(68),
-					b_y,
-					b_w,
-					b_h,
-					TRUE
-				);
-
-				MoveWindow(
-					control_discard_,
-					screenData_ | From::Window | Dimension::Width | Percentage(83),
-					b_y,
-					b_w,
-					b_h,
-					TRUE
-				);
+				buttons_.resize(screenData_);
 
 				return 0;
 			}
@@ -348,8 +243,8 @@ namespace System {
 				WmId::Control cId{ static_cast<WmId::Control>(wId) };
 
 				if (cId == WmId::Control::ApplyFilter) {
-					Auxiliary::System::flush();
-					settings_.changes_performed = false;
+					flush_dns();
+					inner_settings_.changes_performed = false;
 					return 0;
 				}
 
@@ -371,7 +266,7 @@ namespace System {
 			}
 			case WM_CLOSE: {
 
-				if (settings_.changes_performed)
+				//if (inner_settings_.changes_performed)
 					if (Message::display(Message::Type::Warning,
 						Localization::Text::Warning_ChangesPending) == IDNO)
 							return 0;
@@ -386,7 +281,7 @@ namespace System {
 			}
 			case (UINT)WmId::Custom::Request_Language_Change: {
 
-				Language::set(settings_.language);
+				//Language::set();
 
 				SetWindowTextW(hwnd_, Localization::get_text(Localization::Text::MainMenuWindow).data());
 				menuBar_.create(hwnd_);
@@ -412,7 +307,7 @@ namespace System {
 					return 0;
 				}
 
-				if (settings_.changes_performed)
+				if (inner_settings_.changes_performed)
 					if (Message::display(Message::Type::Warning, Localization::Text::Warning_ReloadWillOverWrite) == IDNO)
 						return 0;
 

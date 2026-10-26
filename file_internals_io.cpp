@@ -1,6 +1,5 @@
 #include "./file_internals.hpp"
 
-#pragma comment(lib, "Ws2_32.lib")
 #include <WS2tcpip.h>
 
 #include <fstream>
@@ -25,6 +24,7 @@ FileInternals::Line::Type validate_ip(std::wstring_view input) {
 
 FileInternals::ReturnType<FileInternals::Line::Data> parse_line(const std::wstring& input) {
 
+	// do we really need to materialize them...
 	const auto tokens{
 		input
 		| std::views::split(' ')
@@ -35,18 +35,30 @@ FileInternals::ReturnType<FileInternals::Line::Data> parse_line(const std::wstri
 
 	if (tokens.empty()) {
 		line.type = FileInternals::Line::Type::BLANK;
-		return line;
 	}
+	else {
 
-	const auto& ip_token{ tokens[0] };
+		const auto& ip_token{ tokens[0] };
+		
+		auto rvw{
+			[](auto&& range) {
+				return range
+					| std::views::join_with(' ')
+					| std::ranges::to<std::wstring>();
+			}
+		};
 
-	if (ip_token.starts_with(L'#'))
-		line.type = FileInternals::Line::Type::COMMENT;
-	else
-		line.type = validate_ip(ip_token);
+		if (ip_token.starts_with(L'#')) {
+			line.type = FileInternals::Line::Type::COMMENT;
+			line.domains = rvw(tokens);
+		}
+		else {
+			line.type = validate_ip(ip_token);
+			line.ip = tokens[0];
+			line.domains = rvw(tokens | std::views::drop(1));
+		}
 
-	line.ip = tokens[0];
-	line.domains = tokens | std::views::drop(1) | std::views::join_with(' ') | std::ranges::to<std::wstring>();
+	}
 
 	return line;
 }

@@ -1,19 +1,22 @@
-#include "./component.hpp"
+#include "./win32_utility.hpp"
 
-namespace Utility {
+#include "./localization.hpp"
+#include "./message_handler.hpp"
+
+namespace Win32Utility {
 
 	HWND create_window(const CreateWindowData& data) {
 
 		HWND wnd{ CreateWindowExW(data.exStyle,
 			data.className.data(), data.windowName.data(), data.style,
 			data.x, data.y, data.width, data.height,
-			data.hParent, data.id, data.hInst, data.lpParam)
+			data.hParent, (HMENU)data.id, data.hInst, data.lpParam)
 		};
 
 		if (!wnd)
 			Message::display(Message::Type::CriticalError, Localization::Text::CriticalError_UIFailed);
 
-		return wnd ? wnd : nullptr;
+		return wnd;
 	}
 
 	HFONT create_font(const CreateFontData& data) {

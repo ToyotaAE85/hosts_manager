@@ -1,6 +1,6 @@
-#include "./component.hpp"
+#include "./window_base.hpp"
 
-namespace Component {
+namespace WndBase {
 
 	LRESULT CALLBACK WindowBase::BaseProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
 		WindowBase* wndPtr{ nullptr };
