@@ -9,7 +9,6 @@
 #include <vector>
 #include <concepts>
 
-
 namespace List {
 
 	enum class PopulateRows {
@@ -26,10 +25,19 @@ namespace List {
 	class ListView {
 
 		HWND hwnd_{ };
-		std::vector<FileInternals::Line::Data> line_data_{ };
-		std::uint32_t filter_modes_{ };
 
+		std::vector<FileInternals::Line::Data> line_data_{ };
+
+		std::uint32_t filter_modes_{ };
 		std::uint32_t list_idx_{ };
+
+		HWND edit_{ };
+
+		struct edit_state {
+			ListView* instance_{ nullptr };
+			std::int32_t item_{ -1 };
+			std::int32_t sbitem_{ -1 };
+		};
 
 	public:
 
@@ -43,8 +51,9 @@ namespace List {
 			LVCOLUMNW lvc{ };
 			lvc.mask = LVCF_FMT | LVCF_WIDTH | LVCF_TEXT | LVCF_SUBITEM;
 
+			ListView_InsertColumn(hwnd_, 0, &lvc);
 
-			int col_counter{ 0 };
+			int col_counter{ 1 };
 
 			((
 				lvc.fmt = args.fmt,
@@ -56,7 +65,7 @@ namespace List {
 				++col_counter
 				), ...);
 
-			
+			ListView_DeleteColumn(hwnd_, 0);
 
 			return *this;
 		}
@@ -65,7 +74,7 @@ namespace List {
 
 		ListView& populate_rows(PopulateRows input);
 
-		LRESULT MessageHandler(LPARAM lParam);
+		LRESULT message_handler(LPARAM lParam);
 
 		void refresh_list(PopulateRows from);
 
@@ -78,6 +87,9 @@ namespace List {
 		void rewrite_data();
 
 		auto retrieve_filtered_view() const;
+
+		static LRESULT CALLBACK edit_sub_class_procc(HWND hwnd, UINT msg, 
+			WPARAM wParam, LPARAM lParam, UINT_PTR uIdSubclass, DWORD_PTR dwRefData);
 
 	};
 }

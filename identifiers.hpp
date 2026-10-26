@@ -46,6 +46,15 @@ namespace WmId {
 		Max,
 	};
 
+	enum class ListView {
+		Min = 0x1200,
+
+		List,
+		DynamicEdit,
+
+		Max,
+	};
+
 	enum class Custom {
 		Min = 0x8000, // WM_APP
 

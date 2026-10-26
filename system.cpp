@@ -258,7 +258,7 @@ namespace System {
 				LPNMHDR lpnmsg{ reinterpret_cast<LPNMHDR>(lParam) };
 
 				if (lpnmsg->hwndFrom == listView_.hwnd()) {
-					return listView_.MessageHandler(lParam);
+					return listView_.message_handler(lParam);
 				}
 
 				return 0;
