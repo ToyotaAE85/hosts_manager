@@ -13,12 +13,16 @@
 #include <type_traits>
 #include <utility>
 
+namespace Constants {
+	constexpr inline unsigned int MinTextSize{ 10 };
+	constexpr inline unsigned int MaxTextSize{ 25 };
+}
 
 namespace System {
 
 	struct Settings {
-		std::uint32_t textsize{ };
-		std::uint32_t formatmodes{ };
+		std::uint32_t text_size{ };
+		std::uint32_t filter_modes{ };
 		bool changes_performed{ };
 	};
 
@@ -40,7 +44,6 @@ namespace System {
 
 		void initialize(int);
 		
-
 	private:
 		// maybe keep this, just make it work already lmfao
 		template<std::same_as<Win32Utility::FontData> ...T >
@@ -80,7 +83,9 @@ namespace System {
 
 		void handle_file_restore();
 
-		void pending_changes(bool val);
+		void change_setting(WmId::Custom setting, WmId::MenuBar value);
+
+		void update_self_title();
 
 		int flush_dns();
 

@@ -17,11 +17,15 @@ namespace WmId {
 		Text_IncreaseSize,
 		Text_DecreaseSize,
 
-		Filter_Comments,
-		Filter_Blank,
+		// filter flags in this order
 		Filter_Invalid,
+		Filter_Blank,
+		Filter_Comments,
 		Filter_All,
 
+		// adding more settings past Language_English
+		// requires adjusting
+		// MainWindow::change_setting checks
 		Language_Spanish,
 		Language_English,
 

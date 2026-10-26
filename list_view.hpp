@@ -27,7 +27,9 @@ namespace List {
 
 		HWND hwnd_{ };
 		std::vector<FileInternals::Line::Data> line_data_{ };
-		int filtermodes_{ };
+		std::uint32_t filter_modes_{ };
+
+		std::uint32_t list_idx_{ };
 
 	public:
 
@@ -41,9 +43,8 @@ namespace List {
 			LVCOLUMNW lvc{ };
 			lvc.mask = LVCF_FMT | LVCF_WIDTH | LVCF_TEXT | LVCF_SUBITEM;
 
-			ListView_InsertColumn(hwnd_, 0, &lvc); // dummy column.
 
-			int col_counter{ 1 };
+			int col_counter{ 0 };
 
 			((
 				lvc.fmt = args.fmt,
@@ -55,12 +56,12 @@ namespace List {
 				++col_counter
 				), ...);
 
-			ListView_DeleteColumn(hwnd_, 0);
+			
 
 			return *this;
 		}
 
-		ListView& update_filters(int filtermodes);
+		ListView& update_filters(std::uint32_t filter_modes);
 
 		ListView& populate_rows(PopulateRows input);
 

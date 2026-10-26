@@ -4,6 +4,7 @@
 
 #include "./screen.hpp"
 
+#include "./localization.hpp"
 
 namespace ActionsMenu {
 
@@ -16,6 +17,12 @@ namespace ActionsMenu {
 
 		void initialize(HWND parent, Screen::Data screendata);
 		void resize(Screen::Data screendata);
+		void update_labels();
+		void enable_buttons(bool status);
+
+	private:
+
+		void update_labels_(HWND to, Localization::Text text);
 	};
 
 }

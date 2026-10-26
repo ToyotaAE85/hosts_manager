@@ -108,6 +108,7 @@ namespace Localization {
 		Info_FileSaveSuccess,
 
 		Warning_ReloadWillOverWrite,
+		Warning_RestoreWillOverWrite,
 		Warning_ChangesPending,
 		Warning_FileDeletionIrrevertible,
 

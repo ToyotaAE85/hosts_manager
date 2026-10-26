@@ -5,6 +5,8 @@
 #include <fstream>
 #include <ranges>
 #include <format>
+#include <cwctype>
+#include <algorithm>
 	
 FileInternals::Line::Type validate_ip(std::wstring_view input) {
 
@@ -33,7 +35,7 @@ FileInternals::ReturnType<FileInternals::Line::Data> parse_line(const std::wstri
 
 	FileInternals::Line::Data line{ };
 
-	if (tokens.empty()) {
+	if (std::ranges::all_of(tokens | std::views::join, [](wchar_t c) { return std::iswspace(c); })) {
 		line.type = FileInternals::Line::Type::BLANK;
 	}
 	else {

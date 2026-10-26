@@ -21,7 +21,7 @@ namespace Menu {
 
 		LRESULT MessageHandler(WORD cmd);
 
-		MenuBar& update_menu_settings(std::uint32_t textsize, std::uint32_t filtermodes) noexcept;
+		MenuBar& update_menu_settings(std::uint32_t text_size, std::uint32_t filter_modes) noexcept;
 
 	private:
 

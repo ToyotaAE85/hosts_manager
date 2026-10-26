@@ -76,7 +76,7 @@ namespace FileInternals {
 
 	// might need to refactor this weirdness..
 	// set a target file then use this as a load_data parameter... ????
-	// this function should be strictly used as a parameter for load_data mind you
+	// this function should be strictly used as a parameter for load_data mind you(us)
 	std::filesystem::path from_target_file();
 
 	ReturnType<void> set_target_file(std::filesystem::path new_path);

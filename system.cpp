@@ -5,6 +5,7 @@
 
 #include <CommCtrl.h>
 #include <ShObjIdl.h>
+#include <algorithm>
 
 namespace System {
 
@@ -14,7 +15,7 @@ namespace System {
 
 		Language::set(Language::Type::Spanish);
 
-		inner_settings_.textsize = 16;
+		inner_settings_.text_size = 16;
 
 		WNDCLASSEXW wnd{ };
 		wnd.lpfnWndProc = BaseProc;
@@ -62,6 +63,7 @@ namespace System {
 		).populate_rows(PopulateRows::FromFile);
 
 		buttons_.initialize(hwnd_, screenData_);
+		buttons_.enable_buttons(inner_settings_.changes_performed);
 
 		//initialize_fonts();
 
@@ -114,6 +116,7 @@ namespace System {
 					handle_internal_error(backup_dir.error());
 					pFileMenu->Release();
 					CoUninitialize();
+
 					return;
 				}
 
@@ -124,9 +127,8 @@ namespace System {
 					nullptr, IID_PPV_ARGS(&psiDefaultFolder));
 
 				if (SUCCEEDED(hr)) {
-					hr = pFileMenu->SetFolder(psiDefaultFolder);
+					pFileMenu->SetFolder(psiDefaultFolder);
 					psiDefaultFolder->Release();
-
 				}
 
 				COMDLG_FILTERSPEC flSpec{
@@ -153,6 +155,8 @@ namespace System {
 								handle_internal_error(res.error());
 							}
 							else {
+								buttons_.enable_buttons(inner_settings_.changes_performed = true);
+								update_self_title();
 								listView_.refresh_list(List::PopulateRows::FromFile);
 								Message::display(Message::Type::Info, Text::Info_BackupLoaded);
 							}
@@ -165,14 +169,80 @@ namespace System {
 			}
 			CoUninitialize();
 		}
+
+		return;
 	}
 
 	int MainWindow::flush_dns() {
 		return 0;
 	}
 
-	void MainWindow::pending_changes(bool value) {
-		inner_settings_.changes_performed = value;
+	void MainWindow::update_self_title() {
+		std::wstring title_text{ Localization::get_text(Localization::Text::MainMenuWindow) };
+
+		if (inner_settings_.changes_performed)
+			title_text = std::format(L"{} *", title_text);
+
+		SetWindowTextW(hwnd_, title_text.c_str());
+	}
+
+	void MainWindow::change_setting(WmId::Custom setting, WmId::MenuBar value) {
+		
+		using namespace WmId;
+
+
+		if (setting == Custom::Min || setting > Custom::Request_TextSize_Change)
+			return;
+
+		if (value < WmId::MenuBar::Text_IncreaseSize || value > WmId::MenuBar::Language_English)
+			return;
+
+		
+		auto& [text_size, filter_modes, _] { inner_settings_ };
+
+		if (setting == Custom::Request_Language_Change) {
+
+			switch (value) {
+				case MenuBar::Language_Spanish: Language::set(Language::Type::Spanish); break;
+				default: Language::set(Language::Type::English); break;
+			}
+			
+			update_self_title();
+			buttons_.update_labels();
+			listView_.update_labels();
+		}
+		else if (setting == Custom::Request_Filter_Change) {
+
+			if (value == MenuBar::Filter_All) {
+				filter_modes ^= 0x7;
+			}
+			else {
+				const std::uint32_t bit_shift{
+					static_cast<std::uint32_t>(value) - static_cast<std::uint32_t>(MenuBar::Filter_Invalid)
+				};
+
+				filter_modes ^= (0x1 << bit_shift);
+			}
+
+			listView_.update_filters(inner_settings_.filter_modes).refresh_list(List::PopulateRows::FromMemory);
+		}
+		else if (setting == Custom::Request_TextSize_Change) {
+
+			if (text_size == Constants::MinTextSize || text_size == Constants::MaxTextSize)
+				return;
+
+			if (value == MenuBar::Text_DecreaseSize) {
+				text_size = std::clamp(text_size - 1, Constants::MinTextSize, Constants::MaxTextSize);
+			}
+			else {
+				text_size = std::clamp(text_size + 1, Constants::MinTextSize, Constants::MaxTextSize);
+			}
+
+			//further logic here
+		}
+
+		menuBar_.update_menu_settings(text_size, filter_modes).create(hwnd_);
+		
 	}
 
 	LRESULT MainWindow::MessageHandler(UINT msg, WPARAM wParam, LPARAM lParam) {
@@ -188,7 +258,7 @@ namespace System {
 				LPNMHDR lpnmsg{ reinterpret_cast<LPNMHDR>(lParam) };
 
 				if (lpnmsg->hwndFrom == listView_.hwnd()) {
-					listView_.MessageHandler(lParam);
+					return listView_.MessageHandler(lParam);
 				}
 
 				return 0;
@@ -216,7 +286,7 @@ namespace System {
 				MINMAXINFO* mmi = reinterpret_cast<MINMAXINFO*>(lParam);
 
 				mmi->ptMinTrackSize.x = screenData_ | From::Screen | Dimension::Width | Percentage(45);
-				mmi->ptMinTrackSize.y = screenData_ | From::Screen | Dimension::Height | Percentage(30);;
+				mmi->ptMinTrackSize.y = screenData_ | From::Screen | Dimension::Height | Percentage(45);
 
 				return 0;
 			}
@@ -244,7 +314,6 @@ namespace System {
 
 				if (cId == WmId::Control::ApplyFilter) {
 					flush_dns();
-					inner_settings_.changes_performed = false;
 					return 0;
 				}
 
@@ -256,7 +325,10 @@ namespace System {
 						return 0;
 					}
 
-					pending_changes(false);
+					
+					buttons_.enable_buttons(inner_settings_.changes_performed = false);
+					update_self_title();
+
 					Message::display(Message::Type::Info, Localization::Text::Info_FileSaveSuccess);
 
 					return 0;
@@ -266,7 +338,7 @@ namespace System {
 			}
 			case WM_CLOSE: {
 
-				//if (inner_settings_.changes_performed)
+				if (inner_settings_.changes_performed)
 					if (Message::display(Message::Type::Warning,
 						Localization::Text::Warning_ChangesPending) == IDNO)
 							return 0;
@@ -281,21 +353,20 @@ namespace System {
 			}
 			case (UINT)WmId::Custom::Request_Language_Change: {
 
-				//Language::set();
-
-				SetWindowTextW(hwnd_, Localization::get_text(Localization::Text::MainMenuWindow).data());
-				menuBar_.create(hwnd_);
-				listView_.update_labels();
-
+				change_setting(WmId::Custom::Request_Language_Change, static_cast<WmId::MenuBar>(wParam));
 				Message::display(Message::Type::Info, Localization::Text::Info_LanguageUpdate);
 
 				return 0;
-			}
+			} 
 			case (UINT)WmId::Custom::Request_Filter_Change: {
-
-				listView_.refresh_list(List::PopulateRows::FromMemory);
+				
+				change_setting(WmId::Custom::Request_Filter_Change, static_cast<WmId::MenuBar>(wParam));
 				Message::display(Message::Type::Info, Localization::Text::Info_ListRowsUpdate);
 
+				return 0;
+			}
+			case (UINT)WmId::Custom::Request_TextSize_Change: {
+				change_setting(WmId::Custom::Request_TextSize_Change, static_cast<WmId::MenuBar>(wParam));
 				return 0;
 			}
 			case (UINT)WmId::Custom::Request_List_Reload: {
@@ -313,12 +384,7 @@ namespace System {
 
 				listView_.refresh_list(List::PopulateRows::FromFile);
 				Message::display(Message::Type::Info, Localization::Text::Info_ListReloadUpdate);
-				pending_changes(true);
 
-				return 0;
-			}
-
-			case (UINT)WmId::Custom::Request_TextSize_Change: {
 				return 0;
 			}
 

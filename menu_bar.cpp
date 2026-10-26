@@ -24,9 +24,9 @@ namespace Menu {
 		DrawMenuBar(parent_);
 	}
 
-	MenuBar& MenuBar::update_menu_settings(std::uint32_t textsize, std::uint32_t filtermodes) noexcept {
-		textsize_ = textsize;
-		filtermodes_ = filtermodes;
+	MenuBar& MenuBar::update_menu_settings(std::uint32_t text_size, std::uint32_t filter_modes) noexcept {
+		textsize_ = text_size;
+		filtermodes_ = filter_modes;
 
 		return *this;
 	}
@@ -90,7 +90,6 @@ namespace Menu {
 		return SetMenuItemInfoW(hMenu, static_cast<UINT>(id), FALSE, &mii);
 	}
 
-
 	bool MenuBar::rename_menu_item(HMENU hMenu, WmId::MenuBar id, std::wstring_view new_text) {
 
 		MENUITEMINFOW mii{ };
@@ -100,7 +99,6 @@ namespace Menu {
 
 		return SetMenuItemInfoW(hMenu, static_cast<UINT>(id), FALSE, &mii);
 	}
-
 
 	bool MenuBar::update_menu_labels(HMENU hMenu) {
 
@@ -120,7 +118,8 @@ namespace Menu {
 
 		return true;
 	}
-	// WPARAM contains the command, whilst LPARAM contains possible values
+
+	// WPARAM contains the value to change to
 
 	LRESULT MenuBar::MessageHandler(WORD cmd) {
 
@@ -131,14 +130,14 @@ namespace Menu {
 			case WmId::MenuBar::Language_English: {
 
 				if (language != Language::Type::English)
-					//PostMessageW(parent_, (UINT)wmId, (WPARAM)setting, 0);
+					PostMessageW(parent_, (UINT)WmId::Custom::Request_Language_Change, (WPARAM)wmId, 0);
 
 				return 0;
 			}
 			case WmId::MenuBar::Language_Spanish: {
 
 				if (language != Language::Type::Spanish)
-					//update_setting(Language::Type::Spanish, WmId::Custom::Request_Language_Change);
+					PostMessageW(parent_, (UINT)WmId::Custom::Request_Language_Change, (WPARAM)wmId, 0);
 
 				return 0;
 			}
@@ -146,7 +145,7 @@ namespace Menu {
 			case WmId::MenuBar::Filter_Blank: [[fallthrough]];
 			case WmId::MenuBar::Filter_Comments: [[fallthrough]];
 			case WmId::MenuBar::Filter_All: {
-				//update_setting(Setting::FilterModes{}, filtermodes, WmId::Custom::Request_Filter_Change);
+				PostMessageW(parent_, (UINT)WmId::Custom::Request_Filter_Change, (WPARAM)wmId, 0);
 				return 0;
 			}
 			case WmId::MenuBar::Settings_ReloadFile: {
@@ -155,8 +154,8 @@ namespace Menu {
 			}
 			case WmId::MenuBar::Text_IncreaseSize: [[fallthrough]];
 			case WmId::MenuBar::Text_DecreaseSize: {
-				//textsize += wmId == WmId::MenuBar::Text_DecreaseSize ? -1 : 1;
-				//update_setting(Setting::TextSize{}, textsize, WmId::Custom::Request_TextSize_Change);
+				//text_size += wmId == WmId::MenuBar::Text_DecreaseSize ? -1 : 1;
+				//update_setting(Setting::TextSize{}, text_size, WmId::Custom::Request_TextSize_Change);
 				return 0;
 			}
 			case WmId::MenuBar::File_Exit: {

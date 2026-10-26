@@ -31,14 +31,14 @@ namespace List {
 
 		ListView_SetExtendedListViewStyle(hwnd_,
 			LVS_EX_FULLROWSELECT | LVS_EX_DOUBLEBUFFER
-			| LVS_EX_COLUMNSNAPPOINTS | LVS_EX_TWOCLICKACTIVATE | LVS_EX_GRIDLINES
+			| LVS_EX_COLUMNSNAPPOINTS | LVS_EX_GRIDLINES
 		);
 
 		return *this;
 	}
 
-	ListView& ListView::update_filters(int filtermodes) {
-		filtermodes = filtermodes;
+	ListView& ListView::update_filters(std::uint32_t filter_modes) {
+		filter_modes_ = filter_modes;
 		return *this;
 	}
 
@@ -53,15 +53,15 @@ namespace List {
 				if (line.type == FileInternals::Line::Type::DELETED)
 					return false;
 
-				if ((filtermodes_ & (1 << 0)) &&
+				if ((filter_modes_ & (1 << 0)) &&
 					line.type == FileInternals::Line::Type::INVALID)
 					return false;
 
-				if ((filtermodes_ & (1 << 1)) &&
+				if ((filter_modes_ & (1 << 1)) &&
 					line.type == FileInternals::Line::Type::BLANK)
 					return false;
 
-				if ((filtermodes_ & (1 << 2)) &&
+				if ((filter_modes_ & (1 << 2)) &&
 					line.type == FileInternals::Line::Type::COMMENT)
 					return false;
 
@@ -80,7 +80,7 @@ namespace List {
 		}
 
 		auto vw{ retrieve_filtered_view() };
-		auto idx{ 0 };
+		list_idx_ = 0;
 
 		for (const auto& [l_idx, line] : vw) {
 
@@ -88,7 +88,7 @@ namespace List {
 
 			LVITEMW lvItem{ };
 			lvItem.mask = LVIF_TEXT;
-			lvItem.iItem = idx;
+			lvItem.iItem = list_idx_++;
 
 			lvItem.iSubItem = 0;
 			lvItem.pszText = const_cast<LPWSTR>(cnt_text.c_str());
@@ -115,14 +115,24 @@ namespace List {
 	}
 
 
-	LRESULT ListView::MessageHandler(LPARAM) {
-		//LPNMHDR lpmsg{ reinterpret_cast<LPNMHDR>(lParam) };
+	LRESULT ListView::MessageHandler(LPARAM lParam) {
+		LPNMHDR lpmsg{ reinterpret_cast<LPNMHDR>(lParam) };
+		
+		switch (lpmsg->code) {
+			case LVN_BEGINLABELEDIT: return FALSE;
+			case LVN_ENDLABELEDIT: {
+				NMLVDISPINFO* pdi = (NMLVDISPINFO*)lParam;
 
-		//switch (lpmsg->code) {
-		//	default: return 0;
-		//}
-
-		return 0;
+				// pszText will be NULL if the user cancelled editing (e.g., pressed ESC)
+				if (pdi->item.pszText != NULL) {
+					// Update the internal data structure / item text
+					ListView_SetItemText(lpmsg->hwndFrom, pdi->item.iItem, 0, pdi->item.pszText);
+					return TRUE; // Return TRUE to accept the change
+				}
+				return FALSE; // Return FALSE if cancelled
+			}
+			default: return 0;
+		}
 	}
 
 

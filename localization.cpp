@@ -114,6 +114,7 @@ namespace Localization {
 
 		//warning_
 		{L"Reloading the list will overwrite any unsaved changes", L"Recargar la lista sobreescribira cambios no guardados"},
+		{L"Restore from a backup will overwrite any unsaved changes performed on the list", L"Restaurar desde una copia de seguridad sobreescribira cambios no guardados hechos a la lista"},
 		{L"Pending changes detected, they will be permanently lost if you don't save", L"Se detectaron cambios pendientes, se perderán permanentemente si no se guardan"},
 		{L"This operation will erase the contents of the hosts file, this is irreversible", L"Esta operación borrará el contenido del archivo hosts, esto es irreversible"},
 
