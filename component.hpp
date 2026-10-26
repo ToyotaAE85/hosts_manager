@@ -8,8 +8,8 @@
 #include "./message_handler.hpp"
 #include "./file_internals.hpp"
 
-#include <CommCtrl.h>
 #pragma comment(lib, "comctl32.lib")
+#include <CommCtrl.h>
 
 #include <string>
 #include <vector>
@@ -192,11 +192,13 @@ namespace Component {
 
 		void update_labels();
 
+		const std::vector<FileInternals::Line::Data>& data() const;
+
 	private:
 
 		void rewrite_data();
 
-		auto retrieve_filtered_view();
+		auto retrieve_filtered_view() const;
 
 	};
 
@@ -211,7 +213,7 @@ namespace Component {
 		void create(HWND parent);
 
 		LRESULT MessageHandler(WORD cmd);
-
+				
 	private:
 
 		HMENU build_menu();

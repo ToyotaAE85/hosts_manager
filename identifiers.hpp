@@ -30,6 +30,18 @@ namespace WmId {
 		Max,
 	};
 
+	enum class Control {
+		Min = 0x1100,
+
+		DeleteEntry,
+		NewEntry,
+		SaveEntry,
+		ApplyFilter,
+		DiscardChanges,
+
+		Max,
+	};
+
 	enum class Custom {
 		Min = 0x8000, // WM_APP
 

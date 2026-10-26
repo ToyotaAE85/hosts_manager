@@ -10,6 +10,8 @@
 
 namespace FileInternals {
 
+	inline std::filesystem::path hosts{ LR"(C:\Windows\System32\drivers\etc\hosts)" };
+
 	enum class CreateDirectoryPrompt {
 		Yes,
 		No
@@ -31,7 +33,6 @@ namespace FileInternals {
 		USER_CLEANUP_ABORTED,
 
 		FILE_WRITE_FAILED,
-		FILE_SAVE_FAILED,
 		FILE_OPEN_FAILED,
 		FILE_MISSING,
 	};
@@ -47,7 +48,8 @@ namespace FileInternals {
 			IPV6,
 			COMMENT,
 			BLANK,
-			INVALID
+			INVALID,
+			DELETED
 		};
 
 		struct Data {
@@ -108,6 +110,10 @@ namespace Localization {
 				case FileInternals::Error::HOSTS_FILE_CLEAR_FAILED:		return Text::Warning_HostsFileClearFailed;
 				case FileInternals::Error::BACKUP_NOT_FOUND:			return Text::Warning_BackupNotFound;
 				case FileInternals::Error::USER_CLEANUP_ABORTED:		return Text::Info_UserCleanUpAborted;
+
+				case FileInternals::Error::FILE_WRITE_FAILED:			return Text::Info_FileWriteFailed;
+				case FileInternals::Error::FILE_OPEN_FAILED:			return Text::Info_FileOpenFailed;
+				case FileInternals::Error::FILE_MISSING:				return Text::Info_FileMissing;
 
 				[[unlikely]] default:									return Text::NO_TEXT;
 			}

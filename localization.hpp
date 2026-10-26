@@ -102,6 +102,11 @@ namespace Localization {
 
 		Info_BackupLoaded,
 
+		Info_FileWriteFailed,
+		Info_FileOpenFailed,
+		Info_FileMissing,
+		Info_FileSaveSuccess,
+
 		Warning_ReloadWillOverWrite,
 		Warning_ChangesPending,
 		Warning_FileDeletionIrrevertible,
@@ -112,6 +117,14 @@ namespace Localization {
 		Warning_BackupNotFound,
 
 		Confirm_CreateBackupDir,
+		Confirm_DeleteEntry,
+		Confirm_DiscardChanges,
+
+		Control_DeleteEntry,
+		Control_NewEntry,
+		Control_SaveEntry,
+		Control_ApplyFilter,
+		Control_DiscardChanges,
 
 		COUNT,
 	};

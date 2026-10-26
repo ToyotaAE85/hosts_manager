@@ -2,6 +2,7 @@
 
 #include "./identifiers.hpp"
 #include "./file_internals.hpp"
+#include "./auxiliary.hpp"
 
 #pragma comment(lib, "comctl32.lib")
 #include <CommCtrl.h>
@@ -11,7 +12,6 @@
 namespace System {
 
 	MainWindow::MainWindow(HINSTANCE hInst) noexcept : hInstance_{ hInst } {}
-
 
 	void MainWindow::initialize(int nCmdShow) {
 
@@ -40,7 +40,6 @@ namespace System {
 		ShowWindow(hwnd_, nCmdShow);
 	}
 
-
 	void MainWindow::prepare_ui() {
 
 		using namespace List;
@@ -64,6 +63,9 @@ namespace System {
 			ColumnData{ .name = get_text(Text::Lv_Domain), .fmt = LVCFMT_LEFT, 
 			.size = screenData_ | Screen::From::Window | Screen::Dimension::Width | Screen::Percentage(70) }
 		).populate_rows(PopulateRows::FromFile);
+
+
+		initialize_controls();
 
 		//initialize_fonts();
 
@@ -164,6 +166,63 @@ namespace System {
 		}
 	}
 
+	void MainWindow::pending_changes(bool value) {
+		// we have pending changes
+		EnableWindow(control_apply_, !value);
+		EnableWindow(control_discard_, value);
+		EnableWindow(control_save_, value);
+
+		settings_.changes_performed = value;
+	}
+
+	void MainWindow::initialize_controls() {
+		
+		using namespace Screen;
+		using namespace Utility;
+
+		CreateWindowData base {
+			.exStyle = WS_EX_WINDOWEDGE,
+			.className = L"BUTTON",
+			.style = WS_CHILD | WS_VISIBLE | WS_TABSTOP | BS_VCENTER | BS_CENTER | BS_MULTILINE | BS_PUSHBUTTON,
+			.y = screenData_ | From::Window | Dimension::Height | Percentage(90),
+			.width = screenData_ | From::Window | Dimension::Width | Percentage(12),
+			.height = screenData_ | From::Window | Dimension::Height | Percentage(6),
+			.hParent = hwnd_,
+			.hInst = hInstance_,
+		};		
+		
+
+		base.windowName = Localization::get_text(Localization::Text::Control_NewEntry);
+		base.x = screenData_ | From::Window | Dimension::Width | Percentage(5);
+		base.id = (HMENU)WmId::Control::NewEntry;
+		control_new_ = create_window(base);
+
+
+		base.windowName = Localization::get_text(Localization::Text::Control_DeleteEntry);
+		base.x = screenData_ | From::Window | Dimension::Width | Percentage(20);
+		base.id = (HMENU)WmId::Control::DeleteEntry;
+		control_delete_ = create_window(base);
+
+
+		base.windowName = Localization::get_text(Localization::Text::Control_ApplyFilter);
+		base.x = screenData_ | From::Window | Dimension::Width | Percentage(44);
+		base.id = (HMENU)WmId::Control::ApplyFilter;
+		control_apply_ = create_window(base);
+
+
+		base.windowName = Localization::get_text(Localization::Text::Control_SaveEntry);
+		base.x = screenData_ | From::Window | Dimension::Width | Percentage(68);
+		base.id = (HMENU)WmId::Control::SaveEntry;
+		base.style |= WS_DISABLED;
+		control_save_ = create_window(base);
+
+
+		base.windowName = Localization::get_text(Localization::Text::Control_DiscardChanges);
+		base.x = screenData_ | From::Window | Dimension::Width | Percentage(83);
+		base.id = (HMENU)WmId::Control::DiscardChanges;
+		base.style |= WS_DISABLED;
+		control_discard_ = create_window(base);
+	}
 
 	LRESULT MainWindow::MessageHandler(UINT msg, WPARAM wParam, LPARAM lParam) {
 		switch (msg) {
@@ -188,12 +247,70 @@ namespace System {
 				using namespace Screen; // needed for | overloads.
 				screenData_.regenerate_client_size(LOWORD(lParam), HIWORD(lParam));
 
+				const int b_y{
+					screenData_ | From::Window | Dimension::Height | Percentage(90)
+				};
+
+				const int b_w{
+					screenData_ | From::Window | Dimension::Width | Percentage(12)
+				};
+
+				const int b_h{
+					screenData_ | From::Window | Dimension::Height | Percentage(6)
+				};
+
 				MoveWindow(
 					listView_.hwnd(),
 					screenData_ | From::Window | Dimension::Width | Percentage(5),
 					screenData_ | From::Window | Dimension::Height | Percentage(5),
 					screenData_ | From::Window | Dimension::Width | Percentage(90),
 					screenData_ | From::Window | Dimension::Height | Percentage(80),
+					TRUE
+				);
+
+
+				MoveWindow(
+					control_new_,
+					screenData_ | From::Window | Dimension::Width | Percentage(5),
+					b_y,
+					b_w,
+					b_h,
+					TRUE
+				);
+
+				MoveWindow(
+					control_delete_,
+					screenData_ | From::Window | Dimension::Width | Percentage(20),
+					b_y,
+					b_w,
+					b_h,
+					TRUE
+				);
+
+				MoveWindow(
+					control_apply_,
+					screenData_ | From::Window | Dimension::Width | Percentage(44),
+					b_y,
+					b_w,
+					b_h,
+					TRUE
+				);
+
+				MoveWindow(
+					control_save_,
+					screenData_ | From::Window | Dimension::Width | Percentage(68),
+					b_y,
+					b_w,
+					b_h,
+					TRUE
+				);
+
+				MoveWindow(
+					control_discard_,
+					screenData_ | From::Window | Dimension::Width | Percentage(83),
+					b_y,
+					b_w,
+					b_h,
 					TRUE
 				);
 
@@ -204,7 +321,7 @@ namespace System {
 				MINMAXINFO* mmi = reinterpret_cast<MINMAXINFO*>(lParam);
 
 				mmi->ptMinTrackSize.x = screenData_ | From::Screen | Dimension::Width | Percentage(45);
-				mmi->ptMinTrackSize.y = screenData_ | From::Screen | Dimension::Width | Percentage(30);;
+				mmi->ptMinTrackSize.y = screenData_ | From::Screen | Dimension::Height | Percentage(30);;
 
 				return 0;
 			}
@@ -225,6 +342,28 @@ namespace System {
 
 				if (mId > WmId::MenuBar::Min && mId < WmId::MenuBar::Max) {
 					menuBar_.MessageHandler(wId);
+					return 0;
+				}
+
+				WmId::Control cId{ static_cast<WmId::Control>(wId) };
+
+				if (cId == WmId::Control::ApplyFilter) {
+					Auxiliary::System::flush();
+					settings_.changes_performed = false;
+					return 0;
+				}
+
+				if (cId == WmId::Control::SaveEntry) {
+					auto res{ FileInternals::save_data(listView_.data()) };
+
+					if (!res) {
+						handle_internal_error(res.error());
+						return 0;
+					}
+
+					pending_changes(false);
+					Message::display(Message::Type::Info, Localization::Text::Info_FileSaveSuccess);
+
 					return 0;
 				}
 
@@ -279,7 +418,7 @@ namespace System {
 
 				listView_.refresh_list(List::PopulateRows::FromFile);
 				Message::display(Message::Type::Info, Localization::Text::Info_ListReloadUpdate);
-				settings_.changes_performed = false;
+				pending_changes(true);
 
 				return 0;
 			}

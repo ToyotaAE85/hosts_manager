@@ -11,9 +11,6 @@
 
 namespace FileInternals {
 
-	static std::filesystem::path hosts{ LR"(C:\Windows\System32\drivers\etc\hosts)" };
-
-
 	ReturnType<void> validate_hosts() {
 		if (!std::filesystem::exists(hosts))
 			return std::unexpected(ErrorData{ Message::Type::Warning, Error::HOSTS_FILE_MISSING });

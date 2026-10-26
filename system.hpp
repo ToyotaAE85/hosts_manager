@@ -13,7 +13,8 @@
 #include <filesystem>
 
 namespace System {
-
+	
+	// get rid of this, use wParam/lParam instead to pass stuff around yo
 	struct SettingsLayout {
 		Language::Type language{ };
 		std::uint8_t text_size{ };
@@ -42,12 +43,19 @@ namespace System {
 
 		Screen::Data screenData_{ };
 
+		HWND control_delete_{ };
+		HWND control_new_{ };
+		HWND control_save_{ };
+		HWND control_apply_{ };
+		HWND control_discard_{ };
+
 	public:
 
 		MainWindow(HINSTANCE hInst) noexcept;
 
 		void initialize(int);
-
+		
+		//get rid of this
 		template<typename ...Tags>
 		auto request_settings() const {
 			return std::make_tuple(
@@ -60,15 +68,15 @@ namespace System {
 					if constexpr (std::is_same_v<T, Setting::CurrentFile>)		return settings.current_file;
 				}(settings_, Tags{})...);
 		}
-
+		
 		template<typename ...Tags>
 		void update_settings(const auto&... new_values) {
 			static_assert(sizeof...(Tags) == sizeof...(new_values));
 
 			([&](auto tag, const auto& value) {
 				using T = decltype(tag);
-				if constexpr (std::is_same_v<T, Setting::TextSize>)				settings_.text_size = value;
 				if constexpr (std::is_same_v<T, Setting::Language>)				settings_.language = value;
+				if constexpr (std::is_same_v<T, Setting::TextSize>)				settings_.text_size = value;
 				if constexpr (std::is_same_v<T, Setting::FilterModes>)			settings_.filter_modes = value;
 				if constexpr (std::is_same_v<T, Setting::ChangedBehaviour>)		settings_.changes_performed = value;
 				if constexpr (std::is_same_v<T, Setting::CurrentFile>)			settings_.current_file = value;
@@ -76,7 +84,7 @@ namespace System {
 		}
 
 	private:
-
+		// maybe keep this
 		template<std::same_as<Utility::FontData> ...T >
 		void apply_font_to(T& ... args) {
 			([&](auto& par) {
@@ -94,12 +102,12 @@ namespace System {
 			}(args), ...);
 		}
 
+		//hmmm, not sure about this one.
 		template<typename T>
 		void handle_internal_error(T data) {
 			auto [type, err] { data };
 
 			[[maybe_unused]] int res{ Message::display(type, Localization::TextMap<decltype(err)>{}.map(err)) };
-
 
 			return;
 		}
@@ -111,6 +119,10 @@ namespace System {
 		void handle_file_cleanup();
 
 		void handle_file_restore();
+
+		void pending_changes(bool val);
+
+		void initialize_controls();
 
 	protected:
 		LRESULT MessageHandler(UINT msg, WPARAM wParam, LPARAM lParam) override;

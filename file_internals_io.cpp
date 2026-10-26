@@ -62,8 +62,14 @@ FileInternals::ReturnType<std::filesystem::path> to_temp(std::filesystem::path o
 	if (!temp_file)
 		return std::unexpected(FileInternals::ErrorData{ Message::Type::Info,FileInternals::Error::FILE_OPEN_FAILED});
 
-	for (const auto& line : data) {
-		temp_file << std::format(L"{}{}", line.ip, line.domains);
+	auto vw{
+		data | std::views::filter([](const auto& ln) {
+			return ln.type != FileInternals::Line::Type::DELETED;
+		})
+	};
+
+	for (const auto& line : vw) {
+		temp_file << std::format(L"{} {}", line.ip, line.domains) << '\n';
 
 		if (!temp_file) {
 			std::filesystem::remove(temp);
@@ -84,12 +90,10 @@ FileInternals::ReturnType<std::filesystem::path> to_temp(std::filesystem::path o
 
 namespace FileInternals {
 
-	std::filesystem::path file{ LR"(C:\Windows\System32\drivers\etc\hosts)" };
-
 	ReturnType<std::vector<Line::Data>> load_data(std::filesystem::path obj) {
 
 		if (obj == L"") 
-			obj = file;
+			obj = hosts;
 
 		if (!std::filesystem::exists(obj))
 			return std::unexpected(ErrorData{ Message::Type::Info, Error::FILE_MISSING });
@@ -97,9 +101,9 @@ namespace FileInternals {
 		std::wifstream load{ obj };
 
 		if (!load)
-			return std::unexpected(ErrorData{ Message::Type::Info,Error::FILE_OPEN_FAILED });
+			return std::unexpected(ErrorData{ Message::Type::Info, Error::FILE_OPEN_FAILED });
 
-		std::vector<Line::Data> hosts{ };
+		std::vector<Line::Data> host_data{ };
 		std::wstring line{ };
 
 		while (std::getline(load, line)) {
@@ -108,23 +112,23 @@ namespace FileInternals {
 			if (!data)
 				return std::unexpected(data.error());
 
-			hosts.push_back(std::move(data.value()));
+			host_data.push_back(std::move(data.value()));
 		}
 
-		return hosts;
+		return host_data;
 	}
 
 
 	ReturnType<void> save_data(const std::vector<Line::Data>& data) {
 
-		auto temp{ to_temp(file, data) };
+		auto temp{ to_temp(hosts, data) };
 
 		if (!temp)
 			return std::unexpected(temp.error());
 
 
 		std::error_code ec{ };
-		std::filesystem::rename(temp.value(), file, ec);
+		std::filesystem::rename(temp.value(), hosts, ec);
 
 
 		if (ec) {

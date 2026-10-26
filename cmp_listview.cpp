@@ -38,7 +38,7 @@ namespace Component {
 	}
 
 
-	auto ListView::retrieve_filtered_view() {
+	auto ListView::retrieve_filtered_view() const {
 
 		using namespace System;
 
@@ -54,7 +54,10 @@ namespace Component {
 			line_data_
 			| std::views::enumerate
 			| std::views::filter([filter_modes](const auto& p) {
-				auto [_, line] { p };
+				const auto& [idx, line] { p };
+
+				if (line.type == FileInternals::Line::Type::DELETED)
+					return false;
 
 				if ((filter_modes & (1 << 0)) &&
 					line.type == FileInternals::Line::Type::INVALID)
@@ -83,14 +86,27 @@ namespace Component {
 		}
 
 		auto vw{ retrieve_filtered_view() };
+		auto idx{ 0 };
 
-		for (const auto& [idx, line] : vw) {
+		for (const auto& [l_idx, line] : vw) {
 
-			auto cnt_text{ std::to_wstring(idx + 1) };
+			auto cnt_text{ std::to_wstring(l_idx + 1) };
+
+			// we shouldnt format here, let the formatter do its job on fileinternals
+			std::wstring ip{ 
+				line.type == FileInternals::Line::Type::COMMENT ? 
+					L"" : line.ip
+			};
+
+			std::wstring fmt_dom{ 
+				std::format(L"{} {}", 
+					line.type == FileInternals::Line::Type::COMMENT ?  
+					line.ip : L"", line.domains
+				) };
 
 			LVITEMW lvItem{ };
 			lvItem.mask = LVIF_TEXT;
-			lvItem.iItem = static_cast<int>(idx);
+			lvItem.iItem = idx;
 
 			lvItem.iSubItem = 0;
 			lvItem.pszText = const_cast<LPWSTR>(cnt_text.c_str());
@@ -99,7 +115,7 @@ namespace Component {
 
 			lvItem.iItem = in_idx;
 			lvItem.iSubItem = 1;
-			lvItem.pszText = const_cast<LPWSTR>(line.ip.c_str());
+			lvItem.pszText = const_cast<LPWSTR>(ip.c_str());
 			ListView_SetItem(hwnd_, &lvItem);
 
 			lvItem.iItem = in_idx;
@@ -109,7 +125,7 @@ namespace Component {
 
 			lvItem.iItem = in_idx;
 			lvItem.iSubItem = 3;
-			lvItem.pszText = const_cast<LPWSTR>(line.domains.c_str());
+			lvItem.pszText = const_cast<LPWSTR>(fmt_dom.c_str());
 			ListView_SetItem(hwnd_, &lvItem);
 		}
 
@@ -132,6 +148,8 @@ namespace Component {
 
 		using namespace System;
 
+		// get rid of all of these instances, components in this case, shouldnt be
+		// aware of the coordinator
 		auto pWnd{ reinterpret_cast<MainWindow*>(GetPropW(GetParent(hwnd_), L"MAINMENUWINDOW")) };
 
 		if (!pWnd)
@@ -143,7 +161,7 @@ namespace Component {
 		auto data{ FileInternals::load_data(file)};
 
 		if (!data) {
-			
+			// we should def deal wt this later
 			// Deal with the error later
 			return;
 		}
@@ -183,5 +201,9 @@ namespace Component {
 			ListView_SetItemText(hwnd_, idx, 2, const_cast<LPWSTR>(Localization::get_text(line.type).data()));
 
 		UpdateWindow(hwnd_);
+	}
+
+	const std::vector<FileInternals::Line::Data>& ListView::data() const {
+		return line_data_;
 	}
 }

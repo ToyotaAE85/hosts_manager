@@ -54,7 +54,7 @@ namespace Localization {
 		{L"File", L"Archivo"},
 
 		{L"Degree Project | Hosts File Manager", L"Proyecto de titulación | Administrador del archivo hosts"},
-		
+
 		{L"Load backup file ", L"Cargar un archivo de respaldo"},
 		{L"Backup files...", L"Copias de seguridad"},
 
@@ -107,6 +107,11 @@ namespace Localization {
 
 		{L"The selected backup file has been loaded into memory", L"La copia de seguridad seleccionada ha sido cargada en la memoria"},
 
+		{L"Couldn't write to hosts file, file might be busy", L"No se pudo escribir al archivo hosts, el archivo puede estar ocupado"},
+		{L"Couldn't open requested/hosts file, check program permissions", L"No se pudo abrir el archivo hosts/seleccionado, verifique los permisos de la aplicacion"},
+		{L"Couldn't find requested file", L"No se pudo encontrar el archivo seleccionado"},
+		{L"Data successfully saved into the hosts file", L"Se ha guardado correctamente la informacion al archivo hosts"},
+
 		//warning_
 		{L"Reloading the list will overwrite any unsaved changes", L"Recargar la lista sobreescribira cambios no guardados"},
 		{L"Pending changes detected, they will be permanently lost if you don't save", L"Se detectaron cambios pendientes, se perderán permanentemente si no se guardan"},
@@ -119,8 +124,16 @@ namespace Localization {
 
 		//confirm_
 		{L"Backup directory not found, would you like to create one?", L"No se encontró el directorio para copias de seguridad, ¿desea crear uno?"},
+		{L"", L""},
+		{L"", L""},
 
-		}};
+		//control buttons
+		{L"Delete entry", L"Eliminar entrada"},
+		{L"New entry", L"Nueva entrada"},
+		{L"Save changes", L"Guardar cambios"},
+		{L"Apply filter", L"Aplicar filtro"},
+		{L"Discard changes", L"Descartar cambios"},
+	}};
 
 
 	std::wstring_view get_text(Text id) {
