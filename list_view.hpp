@@ -7,6 +7,7 @@
 #include <cstdint>
 #include <string_view>
 #include <vector>
+
 #include <concepts>
 
 namespace List {
@@ -14,6 +15,11 @@ namespace List {
 	enum class PopulateRows {
 		FromFile,
 		FromMemory
+	};
+
+	enum class UpdateField {
+		IpAddress,
+		Domains,
 	};
 
 	struct ColumnData {
@@ -37,6 +43,8 @@ namespace List {
 			ListView* instance_{ nullptr };
 			std::int32_t item_{ -1 };
 			std::int32_t sbitem_{ -1 };
+			std::int32_t entry_idx_{ -1 };
+			UpdateField field_{ };
 		};
 
 	public:
@@ -79,6 +87,8 @@ namespace List {
 		void refresh_list(PopulateRows from);
 
 		void update_labels();
+
+		void update_entry(std::size_t idx, std::wstring_view str, UpdateField field);
 
 		const std::vector<FileInternals::Line::Data>& data() const;
 

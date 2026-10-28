@@ -81,6 +81,7 @@ namespace FileInternals {
 
 	ReturnType<void> set_target_file(std::filesystem::path new_path);
 
+	ReturnType<Line::Data> revalidate_line_data(const Line::Data& data);
 
 	ReturnType<std::vector<Line::Data>> load_data(std::filesystem::path path = L"");
 

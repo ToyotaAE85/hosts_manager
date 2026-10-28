@@ -20,7 +20,8 @@ namespace List {
 		icex.dwSize = sizeof(INITCOMMONCONTROLSEX);
 		icex.dwICC = ICC_LISTVIEW_CLASSES;
 
-		InitCommonControlsEx(&icex);
+		if (!InitCommonControlsEx(&icex))
+			Message::display(Message::Type::CriticalError, Localization::Text::CriticalError_UIFailed);
 
 		hwnd_ = Win32Utility::create_window({
 				.className = WC_LISTVIEW,
@@ -74,7 +75,6 @@ namespace List {
 		return vw;
 	}
 
-
 	ListView& ListView::populate_rows(List::PopulateRows from) {
 
 		if (from == List::PopulateRows::FromFile) {
@@ -120,6 +120,7 @@ namespace List {
 		LPNMHDR lpmsg{ reinterpret_cast<LPNMHDR>(lParam) };
 
 		switch (lpmsg->code) {
+			// this is doing WAAAY TOO MUCH, leave it for now lmao
 			case NM_DBLCLK: {
 				LPNMITEMACTIVATE item{ reinterpret_cast<LPNMITEMACTIVATE>(lParam) };
 
@@ -130,9 +131,17 @@ namespace List {
 					obj->instance_ = this;
 					obj->item_ = item->iItem;
 					obj->sbitem_ = item->iSubItem;
+					obj->field_ = item->iSubItem == 1 ? UpdateField::IpAddress : UpdateField::Domains;
 
 					RECT sl_rect{ };
 					ListView_GetSubItemRect(hwnd_, obj->item_, obj->sbitem_, LVIR_BOUNDS, &sl_rect);
+
+					std::wstring idx_buffer;
+					idx_buffer.resize(11);
+
+					ListView_GetItemText(hwnd_, obj->item_, 0, idx_buffer.data(), 10);
+
+					obj->entry_idx_ = std::stoi(idx_buffer) - 1;
 
 					//use a proper way to get the current item's buffer
 					std::wstring buffer;
@@ -140,7 +149,6 @@ namespace List {
 
 					ListView_GetItemText(hwnd_, obj->item_, obj->sbitem_, buffer.data(), 999);					
 
-					// failure returns critical error, program closes forcefully
 					edit_ = Win32Utility::create_window({
 						.exStyle = WS_EX_CLIENTEDGE,
 						.className = L"EDIT",
@@ -161,8 +169,9 @@ namespace List {
 					SendMessageW(edit_, EM_SETSEL, 0, -1);
 					SetFocus(edit_);
 						
-					SetWindowSubclass(edit_, ListView::edit_sub_class_procc, 0, (DWORD_PTR)obj);
-
+					if (!SetWindowSubclass(edit_, ListView::edit_sub_class_procc, 0, (DWORD_PTR)obj)) {
+						delete obj;
+					}
 				}
 
 				return 0;
@@ -171,7 +180,7 @@ namespace List {
 				LPNMLVKEYDOWN key{ reinterpret_cast<LPNMLVKEYDOWN>(lParam) };
 
 				if (key->wVKey == VK_DELETE) {
-					// delete stuff here
+					// deletion logic goes ehr
 				}
 				break;
 			}
@@ -225,10 +234,49 @@ namespace List {
 
 		auto vw{ retrieve_filtered_view() };
 
+		auto cmp_idx{ 0 };
 		for (const auto& [idx, line] : vw)
-			ListView_SetItemText(hwnd_, idx, 2, const_cast<LPWSTR>(Localization::get_text(line.type).data()));
+			ListView_SetItemText(hwnd_, cmp_idx++, 2, const_cast<LPWSTR>(Localization::get_text(line.type).data()));
 
 		UpdateWindow(hwnd_);
+	}
+
+	void ListView::update_entry(std::size_t idx, std::wstring_view str, UpdateField field) {
+
+		//when we filter by something and the list size changes, this no longer works, FIX IT, kthx
+		if (idx >= line_data_.size())
+			return;
+
+		auto& [domains, ip, type] { line_data_[idx] };
+
+		if (field == UpdateField::Domains) {
+			domains.assign(str);
+			ListView_SetItemText(hwnd_, idx, 3, line_data_[idx].domains.data());
+		}
+		else if (field == UpdateField::IpAddress) {
+
+			std::wstring temp{ ip };
+			ip.assign(str);
+			
+			auto res{ FileInternals::revalidate_line_data(line_data_[idx]) };
+			
+			if (!res) {
+				ip = temp;
+				// handle this error as well
+				MessageBox(0, L"ERROR", L"", 0); //placeholder
+				return;
+			}
+
+			line_data_[idx] = res.value();
+
+			ListView_SetItemText(hwnd_, idx, 1, ip.data());
+			ListView_SetItemText(hwnd_, idx, 2, const_cast<LPWSTR>(Localization::get_text(type).data()));
+			ListView_SetItemText(hwnd_, idx, 3, domains.data());
+		}
+
+		// send a message here informing the user their stuff has been updated
+		// or maybe not???, request update changes to parent tho
+		// DO NOT UPDATE IF THERE WERENT ANY CHANGES, thx
 	}
 
 	const std::vector<FileInternals::Line::Data>& ListView::data() const {
@@ -249,13 +297,14 @@ namespace List {
 					std::wstring buffer;
 
 					if (buffer_size > 0) {
-						buffer.resize(buffer_size);
+						buffer.resize(buffer_size + 1);
 
 						GetWindowTextW(hwnd, buffer.data(), buffer_size + 1);
+						buffer.resize(buffer_size);
 					}
 
-					ListView_SetItemText(obj->instance_->hwnd_, obj->item_, obj->sbitem_, buffer.data());
-
+					obj->instance_->update_entry(obj->entry_idx_, buffer, obj->field_);
+					
 					DestroyWindow(hwnd);
 					return 0;
 				}
@@ -267,7 +316,7 @@ namespace List {
 				break;
 			}
 			case WM_KILLFOCUS: {
-				PostMessageW(hwnd, WM_KEYDOWN, VK_RETURN, 0);
+				DestroyWindow(hwnd); // the only way to commit is by pressing enter...
 				break;
 			}
 			case WM_DESTROY: {
