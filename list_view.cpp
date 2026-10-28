@@ -8,6 +8,8 @@
 #include <algorithm>
 #include <string>
 
+//i just noticed theres a 260 char limit... dang it..
+
 namespace List {
 
 	HWND ListView::hwnd() const {
@@ -26,7 +28,7 @@ namespace List {
 		hwnd_ = Win32Utility::create_window({
 				.className = WC_LISTVIEW,
 				.style = WS_CHILD | WS_VISIBLE | LVS_REPORT
-						| LVS_SINGLESEL | LVS_NOSORTHEADER | LVS_EDITLABELS,
+						| LVS_SINGLESEL | LVS_NOSORTHEADER,
 				.hParent = parent,
 				.id = (std::uint64_t)WmId::ListView::List,
 				.hInst = GetModuleHandleW(NULL),
@@ -241,24 +243,32 @@ namespace List {
 		UpdateWindow(hwnd_);
 	}
 
-	void ListView::update_entry(std::size_t idx, std::wstring_view str, UpdateField field) {
+	void ListView::update_entry(const edit_state& data, std::wstring_view str) {
+		
+		const auto& [lv, lvidx, unused, vcidx, field] { data };
 
-		//when we filter by something and the list size changes, this no longer works, FIX IT, kthx
-		if (idx >= line_data_.size())
+		if (vcidx >= line_data_.size())
 			return;
 
-		auto& [domains, ip, type] { line_data_[idx] };
+		auto& [domains, ip, type] { line_data_[vcidx] };
 
 		if (field == UpdateField::Domains) {
+
+			if (domains == str)
+				return;
+
 			domains.assign(str);
-			ListView_SetItemText(hwnd_, idx, 3, line_data_[idx].domains.data());
+			ListView_SetItemText(hwnd_, lvidx, 3, line_data_[vcidx].domains.data());
 		}
 		else if (field == UpdateField::IpAddress) {
+
+			if (ip == str)
+				return;
 
 			std::wstring temp{ ip };
 			ip.assign(str);
 			
-			auto res{ FileInternals::revalidate_line_data(line_data_[idx]) };
+			auto res{ FileInternals::revalidate_line_data(line_data_[vcidx]) };
 			
 			if (!res) {
 				ip = temp;
@@ -267,16 +277,18 @@ namespace List {
 				return;
 			}
 
-			line_data_[idx] = res.value();
+			line_data_[vcidx] = res.value();
 
-			ListView_SetItemText(hwnd_, idx, 1, ip.data());
-			ListView_SetItemText(hwnd_, idx, 2, const_cast<LPWSTR>(Localization::get_text(type).data()));
-			ListView_SetItemText(hwnd_, idx, 3, domains.data());
+			ListView_SetItemText(hwnd_, lvidx, 1, ip.data());
+			ListView_SetItemText(hwnd_, lvidx, 2, const_cast<LPWSTR>(Localization::get_text(type).data()));
+			ListView_SetItemText(hwnd_, lvidx, 3, domains.data());
 		}
 
 		// send a message here informing the user their stuff has been updated
 		// or maybe not???, request update changes to parent tho
 		// DO NOT UPDATE IF THERE WERENT ANY CHANGES, thx
+
+		PostMessageW(GetParent(hwnd_), (UINT)WmId::Custom::ListMutated, 0, 0);
 	}
 
 	const std::vector<FileInternals::Line::Data>& ListView::data() const {
@@ -287,6 +299,9 @@ namespace List {
 		UINT_PTR, DWORD_PTR dwRefData) {
 
 		edit_state* obj{ reinterpret_cast<edit_state*>(dwRefData) };
+
+		if (!obj)
+			return 1;
 
 		switch (msg) {
 			case WM_KEYDOWN: {
@@ -303,7 +318,7 @@ namespace List {
 						buffer.resize(buffer_size);
 					}
 
-					obj->instance_->update_entry(obj->entry_idx_, buffer, obj->field_);
+					obj->instance_->update_entry(*obj, buffer);
 					
 					DestroyWindow(hwnd);
 					return 0;

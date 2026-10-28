@@ -401,6 +401,11 @@ namespace System {
 				handle_file_restore();
 				return 0;
 			}
+			case (UINT)WmId::Custom::ListMutated: {
+				buttons_.enable_buttons(inner_settings_.changes_performed = true);
+				update_self_title();
+				return 0;
+			}
 		}
 		return DefWindowProcW(hwnd_, msg, wParam, lParam);
 	}

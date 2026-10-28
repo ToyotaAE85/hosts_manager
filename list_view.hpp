@@ -88,7 +88,7 @@ namespace List {
 
 		void update_labels();
 
-		void update_entry(std::size_t idx, std::wstring_view str, UpdateField field);
+		void update_entry(const edit_state& data, std::wstring_view str);
 
 		const std::vector<FileInternals::Line::Data>& data() const;
 
