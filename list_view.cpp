@@ -8,6 +8,8 @@
 #include <algorithm>
 #include <string>
 
+#include <memory>
+
 //i just noticed theres a 260 char limit... dang it..
 
 namespace List {
@@ -53,7 +55,7 @@ namespace List {
 			line_data_
 			| std::views::enumerate
 			| std::views::filter([this](const auto& p) {
-				const auto& [idx, line] { p };
+				const auto& [_, line] { p };
 
 				if (line.type == FileInternals::Line::Type::DELETED)
 					return false;
@@ -77,12 +79,32 @@ namespace List {
 		return vw;
 	}
 
-	ListView& ListView::populate_rows(List::PopulateRows from) {
+	std::int32_t ListView::cell_to_vector_index(std::int32_t idx_cell) const {
 
-		if (from == List::PopulateRows::FromFile) {
-			rewrite_data();
+		std::int32_t idx{ };
+
+		std::wstring idb;
+		idb.resize(11);
+
+		ListView_GetItemText(hwnd_, idx_cell, 0, idb.data(), 10);
+
+		try {
+			idx = std::stoi(idb);
+		}
+		catch (...) {
+			Message::display(Message::Type::Error, Localization::Text::Error_IndexParsingFailed);
 		}
 
+		// cell_idx contains 1-indexed element, hence -1 needed here.
+
+		return idx - 1;
+	}
+
+	ListView& ListView::populate_rows(List::PopulateRows from) {
+
+		if (from == List::PopulateRows::FromFile)
+			rewrite_data();
+		
 		auto vw{ retrieve_filtered_view() };
 		list_idx_ = 0;
 
@@ -95,7 +117,7 @@ namespace List {
 			lvItem.iItem = list_idx_++;
 
 			lvItem.iSubItem = 0;
-			lvItem.pszText = const_cast<LPWSTR>(cnt_text.c_str());
+			lvItem.pszText = cnt_text.data();
 
 			auto in_idx{ ListView_InsertItem(hwnd_, &lvItem) };
 
@@ -111,7 +133,13 @@ namespace List {
 
 			lvItem.iItem = in_idx;
 			lvItem.iSubItem = 3;
-			lvItem.pszText = const_cast<LPWSTR>(line.domains.c_str());
+
+			std::wstring domain_range{ line.domains };
+
+			if (domain_range.size() > 255)
+				domain_range = std::format(L"{:.255s}...", domain_range);
+			
+			lvItem.pszText = domain_range.data();
 			ListView_SetItem(hwnd_, &lvItem);
 		}
 
@@ -138,19 +166,15 @@ namespace List {
 					RECT sl_rect{ };
 					ListView_GetSubItemRect(hwnd_, obj->item_, obj->sbitem_, LVIR_BOUNDS, &sl_rect);
 
-					std::wstring idx_buffer;
-					idx_buffer.resize(11);
+					obj->entry_idx_ = cell_to_vector_index(obj->item_);
 
-					ListView_GetItemText(hwnd_, obj->item_, 0, idx_buffer.data(), 10);
+					std::wstring buffer{  };
 
-					obj->entry_idx_ = std::stoi(idx_buffer) - 1;
-
-					//use a proper way to get the current item's buffer
-					std::wstring buffer;
-					buffer.resize(1000); 
-
-					ListView_GetItemText(hwnd_, obj->item_, obj->sbitem_, buffer.data(), 999);					
-
+					if (obj->field_ == UpdateField::IpAddress) 
+						buffer = line_data_[obj->entry_idx_].ip;
+					else 
+						buffer =line_data_[obj->entry_idx_].domains;
+					
 					edit_ = Win32Utility::create_window({
 						.exStyle = WS_EX_CLIENTEDGE,
 						.className = L"EDIT",
@@ -182,7 +206,21 @@ namespace List {
 				LPNMLVKEYDOWN key{ reinterpret_cast<LPNMLVKEYDOWN>(lParam) };
 
 				if (key->wVKey == VK_DELETE) {
-					// deletion logic goes ehr
+					int item = ListView_GetNextItem(hwnd_, -1, LVNI_SELECTED);
+
+					if (item != -1) {
+						std::int32_t idx{ cell_to_vector_index(item) };
+						
+						line_data_[idx].type = FileInternals::Line::Type::DELETED;
+
+						refresh_list(PopulateRows::FromMemory);
+						PostMessageW(GetParent(hwnd_), (UINT)WmId::Custom::ListMutated, 0, 0);
+					}
+				}
+
+				if (key->wVKey == VK_ESCAPE) {
+					SetFocus(GetParent(hwnd_));
+					return 0;
 				}
 				break;
 			}
@@ -192,7 +230,6 @@ namespace List {
 		}
 		return 0;
 	}
-
 
 	void ListView::rewrite_data() {
 
@@ -208,7 +245,6 @@ namespace List {
 		line_data_ = std::move(data.value());
 	}
 
-
 	void ListView::refresh_list(List::PopulateRows from) {
 		ListView_DeleteAllItems(hwnd_);
 
@@ -216,7 +252,6 @@ namespace List {
 
 		UpdateWindow(hwnd_);
 	}
-
 
 	void ListView::update_labels() {
 		LVCOLUMN lvc = { };
@@ -247,7 +282,7 @@ namespace List {
 		
 		const auto& [lv, lvidx, unused, vcidx, field] { data };
 
-		if (vcidx >= line_data_.size())
+		if (static_cast<std::size_t>(vcidx) >= line_data_.size()) 
 			return;
 
 		auto& [domains, ip, type] { line_data_[vcidx] };
@@ -272,8 +307,7 @@ namespace List {
 			
 			if (!res) {
 				ip = temp;
-				// handle this error as well
-				MessageBox(0, L"ERROR", L"", 0); //placeholder
+				Message::display(Message::Type::Warning, Localization::Text::Warning_LineRevalidationFailed);
 				return;
 			}
 
@@ -284,15 +318,23 @@ namespace List {
 			ListView_SetItemText(hwnd_, lvidx, 3, domains.data());
 		}
 
-		// send a message here informing the user their stuff has been updated
-		// or maybe not???, request update changes to parent tho
-		// DO NOT UPDATE IF THERE WERENT ANY CHANGES, thx
-
 		PostMessageW(GetParent(hwnd_), (UINT)WmId::Custom::ListMutated, 0, 0);
 	}
 
 	const std::vector<FileInternals::Line::Data>& ListView::data() const {
 		return line_data_;
+	}
+
+	void ListView::resize(Screen::Data screen) {
+		using namespace Screen;
+		MoveWindow(
+			hwnd_,
+			screen | From::Window | Dimension::Width | Percentage(5),
+			screen | From::Window | Dimension::Height | Percentage(5),
+			screen | From::Window | Dimension::Width | Percentage(90),
+			screen | From::Window | Dimension::Height | Percentage(80),
+			TRUE
+		);
 	}
 
 	LRESULT CALLBACK ListView::edit_sub_class_procc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam, 

@@ -88,6 +88,8 @@ namespace Localization {
 		Error_RoamingAppDataNotFound,
 		Error_BackupNotDirectory,
 
+		Error_IndexParsingFailed,
+
 		Info_LanguageUpdate,
 		Info_ListRowsUpdate,
 		Info_ListReloadUpdate,
@@ -120,6 +122,8 @@ namespace Localization {
 		Warning_BackupNotFound,
 
 		Warning_CreateIPCProcessFailed,
+
+		Warning_LineRevalidationFailed,
 
 		Confirm_CreateBackupDir,
 		Confirm_DeleteEntry,

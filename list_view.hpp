@@ -1,12 +1,14 @@
 #include "./win32_api.hpp"
 
 #include "./file_internals.hpp"
+#include "./screen.hpp"
 
 #include <CommCtrl.h>
 
 #include <cstdint>
 #include <string_view>
 #include <vector>
+#include <limits>
 
 #include <concepts>
 
@@ -92,11 +94,15 @@ namespace List {
 
 		const std::vector<FileInternals::Line::Data>& data() const;
 
+		void resize(Screen::Data screen);
+
 	private:
 
 		void rewrite_data();
 
 		auto retrieve_filtered_view() const;
+
+		std::int32_t cell_to_vector_index(std::int32_t idx) const;
 
 		static LRESULT CALLBACK edit_sub_class_procc(HWND hwnd, UINT msg, 
 			WPARAM wParam, LPARAM lParam, UINT_PTR uIdSubclass, DWORD_PTR dwRefData);

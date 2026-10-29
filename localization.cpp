@@ -69,6 +69,7 @@ namespace Localization {
 		{L"Blank", L"Vacio"},
 		{L"Invalid", L"No valido"},
 
+
 		{L"Critical Error", L"Error Critico"},
 		{L"Error", L"Error"},
 		{L"Warning", L"Advertencia"},
@@ -92,6 +93,8 @@ namespace Localization {
 		{L"The Roaming AppData folder could not be found", L"No se pudo encontrar la carpeta Roaming de AppData"},
 		{L"Backup directory failed expected type, not a directory", L"No se esperaba el tipo de la carpeta para copias de seguridad, se esperaba una carpeta"},
 
+		{L"List index parsing failed", L"Indice de lista fuera de rango"},
+
 		//info_
 		{L"Language updated", L"Idioma actualizado"},
 		{L"List rows filters updated", L"Filtros de las filas de la lista actualizadas"},
@@ -112,7 +115,7 @@ namespace Localization {
 		{L"Couldn't find requested file", L"No se pudo encontrar el archivo seleccionado"},
 		{L"Data successfully saved into the hosts file", L"Se ha guardado correctamente la informacion al archivo hosts"},
 
-		{L"Hosts file rules have been applied successfully, note: applications might store previous hosts rules.", L"Se han aplicado con éxito las reglas del archivo hosts, nota: es posible que las aplicaciones almacenen reglas de hosts anteriores."},
+		{L"Hosts file rules have been applied successfully, note: applications might store previous hosts rules.", L"Se han aplicado con éxito las reglas del archivo hosts, nota: es posible que las aplicaciones almacenen reglas de hosts anteriores"},
 
 		//warning_
 		{L"Reloading the list will overwrite any unsaved changes", L"Recargar la lista sobreescribira cambios no guardados"},
@@ -125,8 +128,10 @@ namespace Localization {
 		{L"Couldn't clear the hosts file, verify file permissions", L"No se pudo vaciar el archivo hosts, revise los permisos del archivo"},
 		{L"No backups have been located, proceed with caution", L"No se han encontrado copias de seguridad, proceda con precaucion"},
 
-		{L"Create process operation failed, current hosts file rules couldn't be applied, verify program permissions", L"Error en la operación de creación del proceso, no se pudieron aplicar las reglas actuales del archivo hosts, verifique los permisos del programa."},
+		{L"Create process operation failed, current hosts file rules couldn't be applied, verify program permissions", L"Error en la operación de creación del proceso, no se pudieron aplicar las reglas actuales del archivo hosts, verifique los permisos del programa"},
 
+		{L"Line revalidation failed, component might not show the accurate line contents", L"Error de revalidación de línea, es posible que el componente no muestre el contenido exacto de la línea"},
+		
 		//confirm_
 		{L"Backup directory not found, would you like to create one?", L"No se encontró el directorio para copias de seguridad, ¿desea crear uno?"},
 		{L"", L""},

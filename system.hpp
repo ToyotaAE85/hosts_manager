@@ -89,6 +89,10 @@ namespace System {
 
 		void flush_dns();
 
+		void save_data();
+
+		void reload_file_contents();
+
 	protected:
 		LRESULT MessageHandler(UINT msg, WPARAM wParam, LPARAM lParam) override;
 	};

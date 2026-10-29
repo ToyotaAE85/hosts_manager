@@ -199,6 +199,20 @@ namespace System {
 
 	}
 
+	void MainWindow::save_data() {
+		auto res{ FileInternals::save_data(listView_.data()) };
+
+		if (!res) {
+			handle_internal_error(res.error());
+			return;
+		}
+
+		buttons_.enable_buttons(inner_settings_.changes_performed = false);
+		update_self_title();
+
+		Message::display(Message::Type::Info, Localization::Text::Info_FileSaveSuccess);
+	}
+
 	void MainWindow::update_self_title() {
 		std::wstring title_text{ Localization::get_text(Localization::Text::MainMenuWindow) };
 
@@ -267,6 +281,25 @@ namespace System {
 		
 	}
 
+
+	void MainWindow::reload_file_contents() {
+		const auto hosts_int{ FileInternals::validate_hosts() };
+
+		if (!hosts_int) {
+			handle_internal_error(hosts_int.error());
+			return;
+		}
+
+		if (inner_settings_.changes_performed)
+			if (Message::display(Message::Type::Warning, Localization::Text::Warning_ReloadWillOverWrite) == IDNO)
+				return;
+
+		buttons_.enable_buttons(inner_settings_.changes_performed = false);
+		update_self_title();
+		listView_.refresh_list(List::PopulateRows::FromFile);
+		Message::display(Message::Type::Info, Localization::Text::Info_ListReloadUpdate);
+	}
+
 	LRESULT MainWindow::MessageHandler(UINT msg, WPARAM wParam, LPARAM lParam) {
 		switch (msg) {
 			case WM_CREATE: {
@@ -285,21 +318,10 @@ namespace System {
 				return 0;
 			}
 			case WM_SIZE: {
-
-				using namespace Screen;
 				screenData_.regenerate_client_size(LOWORD(lParam), HIWORD(lParam));
 
-				MoveWindow(
-					listView_.hwnd(),
-					screenData_ | From::Window | Dimension::Width | Percentage(5),
-					screenData_ | From::Window | Dimension::Height | Percentage(5),
-					screenData_ | From::Window | Dimension::Width | Percentage(90),
-					screenData_ | From::Window | Dimension::Height | Percentage(80),
-					TRUE
-				);
-
+				listView_.resize(screenData_);
 				buttons_.resize(screenData_);
-
 				return 0;
 			}
 			case WM_GETMINMAXINFO: {
@@ -339,19 +361,12 @@ namespace System {
 				}
 
 				if (cId == WmId::Control::SaveEntry) {
-					auto res{ FileInternals::save_data(listView_.data()) };
+					save_data();
+					return 0;
+				}
 
-					if (!res) {
-						handle_internal_error(res.error());
-						return 0;
-					}
-
-					
-					buttons_.enable_buttons(inner_settings_.changes_performed = false);
-					update_self_title();
-
-					Message::display(Message::Type::Info, Localization::Text::Info_FileSaveSuccess);
-
+				if (cId == WmId::Control::DiscardChanges) {
+					reload_file_contents();
 					return 0;
 				}
 
@@ -363,15 +378,18 @@ namespace System {
 					if (Message::display(Message::Type::Warning,
 						Localization::Text::Warning_ChangesPending) == IDNO)
 							return 0;
-
-				// Further logic goes here
-				// what logic??? wdym further LOGIC????
-
 				break;
 			}
 			case WM_DESTROY: {
 				PostQuitMessage(0);
 				return 0;
+			}
+			case WM_KEYDOWN: {
+				if (GetAsyncKeyState(VK_CONTROL) & 0x8000) {
+					if (wParam == 'S' && inner_settings_.changes_performed == true)
+						save_data();
+				}
+				break;
 			}
 			case (UINT)WmId::Custom::Request_Language_Change: {
 
@@ -392,23 +410,7 @@ namespace System {
 				return 0;
 			}
 			case (UINT)WmId::Custom::Request_List_Reload: {
-
-				const auto hosts_int{ FileInternals::validate_hosts() };
-
-				if (!hosts_int) {
-					handle_internal_error(hosts_int.error());
-					return 0;
-				}
-
-				if (inner_settings_.changes_performed)
-					if (Message::display(Message::Type::Warning, Localization::Text::Warning_ReloadWillOverWrite) == IDNO)
-						return 0;
-				
-				buttons_.enable_buttons(inner_settings_.changes_performed = false);
-				update_self_title();
-				listView_.refresh_list(List::PopulateRows::FromFile);
-				Message::display(Message::Type::Info, Localization::Text::Info_ListReloadUpdate);
-
+				reload_file_contents();
 				return 0;
 			}
 

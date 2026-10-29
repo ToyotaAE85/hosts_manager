@@ -24,7 +24,6 @@ FileInternals::Line::Type validate_ip(std::wstring_view input) {
 }
 
 
-//something IS wrong here, we always end up with invalid entries, regardless of an actual valid IP
 FileInternals::ReturnType<FileInternals::Line::Data> parse_line(const std::wstring& input) {
 
 	// do we really need to materialize them...
@@ -46,10 +45,13 @@ FileInternals::ReturnType<FileInternals::Line::Data> parse_line(const std::wstri
 		auto rvw{
 			[](auto&& range) {
 				return range
+					| std::views::drop(1)
 					| std::views::join_with(' ')
 					| std::ranges::to<std::wstring>();
 			}
 		};
+
+		line.ip = tokens[0];
 		
 		if (ip_token.starts_with(L'#')) {
 			line.type = FileInternals::Line::Type::COMMENT;
@@ -57,8 +59,7 @@ FileInternals::ReturnType<FileInternals::Line::Data> parse_line(const std::wstri
 		}
 		else {
 			line.type = validate_ip(ip_token);
-			line.ip = tokens[0];
-			line.domains = rvw(tokens | std::views::drop(1));
+			line.domains = rvw(tokens);
 		}
 
 	}
@@ -104,8 +105,6 @@ FileInternals::ReturnType<std::filesystem::path> to_temp(std::filesystem::path o
 
 
 namespace FileInternals {
-
-	//something here is wrong... yet i can't find the thing..., maybe it's just me idk
 
 	ReturnType<Line::Data> revalidate_line_data(const Line::Data& data) {
 		auto res{ parse_line(std::format(L"{} {}", data.ip, data.domains)) };
