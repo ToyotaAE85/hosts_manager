@@ -107,6 +107,8 @@ namespace Localization {
 		Info_FileMissing,
 		Info_FileSaveSuccess,
 
+		Info_FilterRulesRefreshed,
+
 		Warning_ReloadWillOverWrite,
 		Warning_RestoreWillOverWrite,
 		Warning_ChangesPending,
@@ -116,6 +118,8 @@ namespace Localization {
 		Warning_HostsFileCopyFailed,
 		Warning_HostsFileClearFailed,
 		Warning_BackupNotFound,
+
+		Warning_CreateIPCProcessFailed,
 
 		Confirm_CreateBackupDir,
 		Confirm_DeleteEntry,

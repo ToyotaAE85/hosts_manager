@@ -80,6 +80,7 @@ namespace System {
 		Message::display(Message::Type::Info, Localization::Text::Info_HostsFileBacked);
 	}
 
+	// this function is a bit odd, why are we cleaning the hosts file instead of the current table... ?
 	void MainWindow::handle_file_cleanup() {
 		auto result{ FileInternals::delete_file_contents() };
 
@@ -173,8 +174,29 @@ namespace System {
 		return;
 	}
 
-	int MainWindow::flush_dns() {
-		return 0;
+	void MainWindow::flush_dns() {
+		
+
+		BOOL res{ };
+
+		STARTUPINFO si{ };
+		si.cb = sizeof(si);
+
+		PROCESS_INFORMATION pi{ };
+		wchar_t cmd_args[]{ L"ipconfig.exe /flushdns" };
+
+		res = CreateProcessW(NULL, cmd_args, NULL, NULL, FALSE, CREATE_NO_WINDOW, NULL, NULL, &si, &pi);
+
+		if (!res) {
+			Message::display(Message::Type::Warning, Localization::Text::Warning_CreateIPCProcessFailed);
+			return;
+		}
+
+		CloseHandle(pi.hThread);
+		CloseHandle(pi.hProcess);
+
+		Message::display(Message::Type::Info, Localization::Text::Info_FilterRulesRefreshed);
+
 	}
 
 	void MainWindow::update_self_title() {
@@ -257,9 +279,8 @@ namespace System {
 			case WM_NOTIFY: {
 				LPNMHDR lpnmsg{ reinterpret_cast<LPNMHDR>(lParam) };
 
-				if (lpnmsg->hwndFrom == listView_.hwnd()) {
+				if (lpnmsg->hwndFrom == listView_.hwnd()) 
 					return listView_.message_handler(lParam);
-				}
 
 				return 0;
 			}
@@ -344,6 +365,7 @@ namespace System {
 							return 0;
 
 				// Further logic goes here
+				// what logic??? wdym further LOGIC????
 
 				break;
 			}
@@ -381,7 +403,9 @@ namespace System {
 				if (inner_settings_.changes_performed)
 					if (Message::display(Message::Type::Warning, Localization::Text::Warning_ReloadWillOverWrite) == IDNO)
 						return 0;
-
+				
+				buttons_.enable_buttons(inner_settings_.changes_performed = false);
+				update_self_title();
 				listView_.refresh_list(List::PopulateRows::FromFile);
 				Message::display(Message::Type::Info, Localization::Text::Info_ListReloadUpdate);
 

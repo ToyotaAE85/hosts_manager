@@ -330,6 +330,10 @@ namespace List {
 
 				break;
 			}
+			case WM_MOUSEWHEEL: {
+				DestroyWindow(hwnd);
+				break;
+			}
 			case WM_KILLFOCUS: {
 				DestroyWindow(hwnd); // the only way to commit is by pressing enter...
 				break;

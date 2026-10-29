@@ -112,6 +112,8 @@ namespace Localization {
 		{L"Couldn't find requested file", L"No se pudo encontrar el archivo seleccionado"},
 		{L"Data successfully saved into the hosts file", L"Se ha guardado correctamente la informacion al archivo hosts"},
 
+		{L"Hosts file rules have been applied successfully, note: applications might store previous hosts rules.", L"Se han aplicado con éxito las reglas del archivo hosts, nota: es posible que las aplicaciones almacenen reglas de hosts anteriores."},
+
 		//warning_
 		{L"Reloading the list will overwrite any unsaved changes", L"Recargar la lista sobreescribira cambios no guardados"},
 		{L"Restore from a backup will overwrite any unsaved changes performed on the list", L"Restaurar desde una copia de seguridad sobreescribira cambios no guardados hechos a la lista"},
@@ -122,6 +124,8 @@ namespace Localization {
 		{L"Couldn't copy the hosts file, verify file permissions", L"No se pudo copiar el archivo hosts, revise los permisos del archivo"},
 		{L"Couldn't clear the hosts file, verify file permissions", L"No se pudo vaciar el archivo hosts, revise los permisos del archivo"},
 		{L"No backups have been located, proceed with caution", L"No se han encontrado copias de seguridad, proceda con precaucion"},
+
+		{L"Create process operation failed, current hosts file rules couldn't be applied, verify program permissions", L"Error en la operación de creación del proceso, no se pudieron aplicar las reglas actuales del archivo hosts, verifique los permisos del programa."},
 
 		//confirm_
 		{L"Backup directory not found, would you like to create one?", L"No se encontró el directorio para copias de seguridad, ¿desea crear uno?"},

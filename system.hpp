@@ -87,7 +87,7 @@ namespace System {
 
 		void update_self_title();
 
-		int flush_dns();
+		void flush_dns();
 
 	protected:
 		LRESULT MessageHandler(UINT msg, WPARAM wParam, LPARAM lParam) override;
