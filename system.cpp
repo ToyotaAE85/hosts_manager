@@ -208,7 +208,7 @@ namespace System {
 
 		buttons_.enable_buttons(inner_settings_.changes_performed = false);
 		update_self_title();
-
+		listView_.refresh_list(List::PopulateRows::FromFile);
 		Message::display(Message::Type::Info, Localization::Text::Info_FileSaveSuccess);
 	}
 
@@ -281,7 +281,7 @@ namespace System {
 	}
 
 
-	void MainWindow::reload_file_contents() {
+	void MainWindow::handle_file_reload() {
 		const auto hosts_int{ FileInternals::validate_hosts() };
 
 		if (!hosts_int) {
@@ -365,7 +365,7 @@ namespace System {
 				}
 
 				if (cId == WmId::Control::DiscardChanges) {
-					reload_file_contents();
+					handle_file_reload();
 					return 0;
 				}
 
@@ -387,6 +387,8 @@ namespace System {
 				if (GetAsyncKeyState(VK_CONTROL) & 0x8000) {
 					if (wParam == 'S' && inner_settings_.changes_performed == true)
 						save_data();
+					else if (wParam == 'R')
+						handle_file_reload();
 				}
 				break;
 			}
@@ -409,7 +411,7 @@ namespace System {
 				return 0;
 			}
 			case (UINT)WmId::Custom::Request_List_Reload: {
-				reload_file_contents();
+				handle_file_reload();
 				return 0;
 			}
 

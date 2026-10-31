@@ -93,6 +93,8 @@ namespace List {
 		}
 		catch (...) {
 			Message::display(Message::Type::Error, Localization::Text::Error_IndexParsingFailed);
+			
+			return 0;
 		}
 
 		// cell_idx contains 1-indexed element, hence -1 needed here.
@@ -108,8 +110,13 @@ namespace List {
 		auto vw{ retrieve_filtered_view() };
 		list_idx_ = 0;
 
+		SendMessageW(hwnd_, WM_SETREDRAW, FALSE, 0);
+
 		for (const auto& [l_idx, line] : vw)
 			insert_internal_entry(l_idx + 1, line);
+
+		SendMessageW(hwnd_, WM_SETREDRAW, TRUE, 0);
+		InvalidateRect(hwnd_, nullptr, TRUE);
 		
 		return *this;
 	}

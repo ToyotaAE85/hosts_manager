@@ -91,7 +91,7 @@ namespace System {
 
 		void save_data();
 
-		void reload_file_contents();
+		void handle_file_reload();
 
 	protected:
 		LRESULT MessageHandler(UINT msg, WPARAM wParam, LPARAM lParam) override;
