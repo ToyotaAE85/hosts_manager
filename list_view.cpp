@@ -30,7 +30,7 @@ namespace List {
 		hwnd_ = Win32Utility::create_window({
 				.className = WC_LISTVIEW,
 				.style = WS_CHILD | WS_VISIBLE | LVS_REPORT
-						| LVS_SINGLESEL | LVS_NOSORTHEADER,
+						 | LVS_NOSORTHEADER,
 				.hParent = parent,
 				.id = (std::uint64_t)WmId::ListView::List,
 				.hInst = GetModuleHandleW(NULL),
@@ -174,6 +174,12 @@ namespace List {
 				else if (item->iItem == -1) { // a bit odd that this would insert an entry...
 					insert_entry();
 				}
+				return 0;
+			}
+			case LVN_BEGINSCROLL: {
+				if (edit_ != nullptr)
+					DestroyWindow(edit_);
+				
 				return 0;
 			}
 			case LVN_KEYDOWN: {
@@ -362,16 +368,32 @@ namespace List {
 	}
 
 	void ListView::delete_selected_entry() {
-		int item = ListView_GetNextItem(hwnd_, -1, LVNI_SELECTED);
 
-		if (item != -1) {
-			std::int32_t idx{ cell_to_vector_index(item) };
+		int highest_selected{ -1 };
 
-			line_data_[idx].type = FileInternals::Line::Type::DELETED;
+		int current_search{ -1 };
+		while ((current_search = ListView_GetNextItem(hwnd_, current_search, LVNI_SELECTED)) != -1)
+			highest_selected = current_search;
+		
+		if (highest_selected == -1)
+			return;
 
-			refresh_list(PopulateRows::FromMemory);
-			PostMessageW(GetParent(hwnd_), (UINT)WmId::Custom::ListMutated, 0, 0);
+		SendMessageW(hwnd_, WM_SETREDRAW, FALSE, 0);
+
+		for (auto item{ highest_selected }; item > -1; item--) {
+			if (ListView_GetItemState(hwnd_, item, LVIS_SELECTED) & LVIS_SELECTED) {
+
+				std::int32_t idx{ cell_to_vector_index(item) };
+				line_data_[idx].type = FileInternals::Line::Type::DELETED;
+
+				ListView_DeleteItem(hwnd_, item);
+			}
 		}
+
+		SendMessageW(hwnd_, WM_SETREDRAW, TRUE, 0);
+		InvalidateRect(hwnd_, NULL, TRUE);
+
+		PostMessageW(GetParent(hwnd_), (UINT)WmId::Custom::ListMutated, 0, 0);
 	}
 
 	void ListView::insert_entry() {
@@ -418,10 +440,6 @@ namespace List {
 					return 0;
 				}
 
-				break;
-			}
-			case WM_MOUSEWHEEL: {
-				DestroyWindow(hwnd);
 				break;
 			}
 			case WM_KILLFOCUS: {

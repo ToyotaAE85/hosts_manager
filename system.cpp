@@ -176,7 +176,6 @@ namespace System {
 
 	void MainWindow::flush_dns() {
 		
-
 		BOOL res{ };
 
 		STARTUPINFO si{ };
