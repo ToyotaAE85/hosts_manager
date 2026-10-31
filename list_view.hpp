@@ -104,6 +104,10 @@ namespace List {
 
 		std::int32_t cell_to_vector_index(std::int32_t idx) const;
 
+		void insert_entry(std::int64_t shownidx, const FileInternals::Line::Data& element);
+
+		bool entry_is_filtered(FileInternals::Line::Type type);
+
 		static LRESULT CALLBACK edit_sub_class_procc(HWND hwnd, UINT msg, 
 			WPARAM wParam, LPARAM lParam, UINT_PTR uIdSubclass, DWORD_PTR dwRefData);
 

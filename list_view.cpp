@@ -108,41 +108,9 @@ namespace List {
 		auto vw{ retrieve_filtered_view() };
 		list_idx_ = 0;
 
-		for (const auto& [l_idx, line] : vw) {
-
-			auto cnt_text{ std::to_wstring(l_idx + 1) };
-
-			LVITEMW lvItem{ };
-			lvItem.mask = LVIF_TEXT;
-			lvItem.iItem = list_idx_++;
-
-			lvItem.iSubItem = 0;
-			lvItem.pszText = cnt_text.data();
-
-			auto in_idx{ ListView_InsertItem(hwnd_, &lvItem) };
-
-			lvItem.iItem = in_idx;
-			lvItem.iSubItem = 1;
-			lvItem.pszText = const_cast<LPWSTR>(line.ip.c_str());
-			ListView_SetItem(hwnd_, &lvItem);
-
-			lvItem.iItem = in_idx;
-			lvItem.iSubItem = 2;
-			lvItem.pszText = const_cast<LPWSTR>(Localization::get_text(line.type).data());
-			ListView_SetItem(hwnd_, &lvItem);
-
-			lvItem.iItem = in_idx;
-			lvItem.iSubItem = 3;
-
-			std::wstring domain_range{ line.domains };
-
-			if (domain_range.size() > 255)
-				domain_range = std::format(L"{:.255s}...", domain_range);
-			
-			lvItem.pszText = domain_range.data();
-			ListView_SetItem(hwnd_, &lvItem);
-		}
-
+		for (const auto& [l_idx, line] : vw)
+			insert_entry(l_idx + 1, line);
+		
 		return *this;
 	}
 
@@ -151,6 +119,9 @@ namespace List {
 
 		switch (lpmsg->code) {
 			// this is doing WAAAY TOO MUCH, leave it for now lmao
+			case NM_CUSTOMDRAW: {
+
+			}
 			case NM_DBLCLK: {
 				LPNMITEMACTIVATE item{ reinterpret_cast<LPNMITEMACTIVATE>(lParam) };
 
@@ -199,7 +170,10 @@ namespace List {
 						delete obj;
 					}
 				}
-
+				else if (item->iItem == -1) {
+					// wip
+					MessageBoxW(0, L"ADD", L"", 0);
+				}
 				return 0;
 			}
 			case LVN_KEYDOWN: {
@@ -280,7 +254,7 @@ namespace List {
 
 	void ListView::update_entry(const edit_state& data, std::wstring_view str) {
 		
-		const auto& [lv, lvidx, unused, vcidx, field] { data };
+		const auto& [lv, lvidx, _, vcidx, field] { data };
 
 		if (static_cast<std::size_t>(vcidx) >= line_data_.size()) 
 			return;
@@ -318,6 +292,9 @@ namespace List {
 			ListView_SetItemText(hwnd_, lvidx, 3, domains.data());
 		}
 
+		if (entry_is_filtered(type))
+			ListView_DeleteItem(hwnd_, lvidx);
+
 		PostMessageW(GetParent(hwnd_), (UINT)WmId::Custom::ListMutated, 0, 0);
 	}
 
@@ -335,6 +312,47 @@ namespace List {
 			screen | From::Window | Dimension::Height | Percentage(80),
 			TRUE
 		);
+	}
+
+	void ListView::insert_entry(std::int64_t shownidx, const FileInternals::Line::Data& element) {
+
+		const auto& [domains, ip, type] { element };
+
+		auto cnt_text{ std::to_wstring(shownidx) };
+
+		LVITEMW lvItem{ };
+		lvItem.mask = LVIF_TEXT;
+		lvItem.iItem = list_idx_++;
+		lvItem.iSubItem = 0;
+		lvItem.pszText = cnt_text.data();
+
+		int inserted_idx{ ListView_InsertItem(hwnd_, &lvItem) };
+
+		if (inserted_idx == -1)
+			Message::display(Message::Type::CriticalError, Localization::Text::CriticalError_UIFailed);
+
+		ListView_SetItemText(hwnd_, inserted_idx, 1, const_cast<LPWSTR>(ip.data()));
+
+		auto type_text{ Localization::get_text(type).data() };
+		ListView_SetItemText(hwnd_, inserted_idx, 2, const_cast<LPWSTR>(type_text));
+
+
+		std::wstring domain_range{ domains };
+
+		if (domain_range.size() > 255)
+			domain_range = std::format(L"{:.255s}...", domain_range);
+
+		ListView_SetItemText(hwnd_, inserted_idx, 3, domain_range.data());
+	}
+
+	bool ListView::entry_is_filtered(FileInternals::Line::Type type) {
+
+		switch (type) {
+			case FileInternals::Line::Type::INVALID:	return filter_modes_ & 1;
+			case FileInternals::Line::Type::BLANK:		return filter_modes_ & (1 << 1);
+			case FileInternals::Line::Type::COMMENT:	return filter_modes_ & (1 << 2);
+			default: return false;
+		}
 	}
 
 	LRESULT CALLBACK ListView::edit_sub_class_procc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam, 
