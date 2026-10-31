@@ -110,6 +110,7 @@ namespace Localization {
 		Info_FileSaveSuccess,
 
 		Info_FilterRulesRefreshed,
+		Info_NewEntryAddedWithFilters,
 
 		Warning_ReloadWillOverWrite,
 		Warning_RestoreWillOverWrite,

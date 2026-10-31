@@ -109,7 +109,7 @@ namespace List {
 		list_idx_ = 0;
 
 		for (const auto& [l_idx, line] : vw)
-			insert_entry(l_idx + 1, line);
+			insert_internal_entry(l_idx + 1, line);
 		
 		return *this;
 	}
@@ -118,10 +118,11 @@ namespace List {
 		LPNMHDR lpmsg{ reinterpret_cast<LPNMHDR>(lParam) };
 
 		switch (lpmsg->code) {
-			// this is doing WAAAY TOO MUCH, leave it for now lmao
+			
 			case NM_CUSTOMDRAW: {
 
 			}
+			// this is doing WAAAY TOO MUCH, leave it for now lmao
 			case NM_DBLCLK: {
 				LPNMITEMACTIVATE item{ reinterpret_cast<LPNMITEMACTIVATE>(lParam) };
 
@@ -170,9 +171,8 @@ namespace List {
 						delete obj;
 					}
 				}
-				else if (item->iItem == -1) {
-					// wip
-					MessageBoxW(0, L"ADD", L"", 0);
+				else if (item->iItem == -1) { // a bit odd that this would insert an entry...
+					insert_entry();
 				}
 				return 0;
 			}
@@ -180,20 +180,27 @@ namespace List {
 				LPNMLVKEYDOWN key{ reinterpret_cast<LPNMLVKEYDOWN>(lParam) };
 
 				if (key->wVKey == VK_DELETE) {
-					int item = ListView_GetNextItem(hwnd_, -1, LVNI_SELECTED);
-
-					if (item != -1) {
-						std::int32_t idx{ cell_to_vector_index(item) };
-						
-						line_data_[idx].type = FileInternals::Line::Type::DELETED;
-
-						refresh_list(PopulateRows::FromMemory);
-						PostMessageW(GetParent(hwnd_), (UINT)WmId::Custom::ListMutated, 0, 0);
-					}
+					delete_selected_entry();
+					return 0;
 				}
 
 				if (key->wVKey == VK_ESCAPE) {
 					SetFocus(GetParent(hwnd_));
+					return 0;
+				}
+
+				if (GetAsyncKeyState(VK_CONTROL) & 0x8000) {
+					switch (key->wVKey) {
+						case 'N': {
+							insert_entry();
+							break;
+						}
+						case 'X': {
+							delete_selected_entry();
+							break;
+						}
+					}
+					
 					return 0;
 				}
 				break;
@@ -314,7 +321,7 @@ namespace List {
 		);
 	}
 
-	void ListView::insert_entry(std::int64_t shownidx, const FileInternals::Line::Data& element) {
+	void ListView::insert_internal_entry(std::int64_t shownidx, const FileInternals::Line::Data& element) {
 
 		const auto& [domains, ip, type] { element };
 
@@ -336,7 +343,6 @@ namespace List {
 		auto type_text{ Localization::get_text(type).data() };
 		ListView_SetItemText(hwnd_, inserted_idx, 2, const_cast<LPWSTR>(type_text));
 
-
 		std::wstring domain_range{ domains };
 
 		if (domain_range.size() > 255)
@@ -353,6 +359,30 @@ namespace List {
 			case FileInternals::Line::Type::COMMENT:	return filter_modes_ & (1 << 2);
 			default: return false;
 		}
+	}
+
+	void ListView::delete_selected_entry() {
+		int item = ListView_GetNextItem(hwnd_, -1, LVNI_SELECTED);
+
+		if (item != -1) {
+			std::int32_t idx{ cell_to_vector_index(item) };
+
+			line_data_[idx].type = FileInternals::Line::Type::DELETED;
+
+			refresh_list(PopulateRows::FromMemory);
+			PostMessageW(GetParent(hwnd_), (UINT)WmId::Custom::ListMutated, 0, 0);
+		}
+	}
+
+	void ListView::insert_entry() {
+		line_data_.push_back({ .type = FileInternals::Line::Type::BLANK });
+
+		if (entry_is_filtered(line_data_.back().type))
+			Message::display(Message::Type::Info, Localization::Text::Info_NewEntryAddedWithFilters);
+		else
+			insert_internal_entry(line_data_.size(), line_data_.back());
+
+		PostMessageW(GetParent(hwnd_), (UINT)WmId::Custom::ListMutated, 0, 0);
 	}
 
 	LRESULT CALLBACK ListView::edit_sub_class_procc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam, 

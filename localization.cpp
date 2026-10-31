@@ -116,6 +116,7 @@ namespace Localization {
 		{L"Data successfully saved into the hosts file", L"Se ha guardado correctamente la informacion al archivo hosts"},
 
 		{L"Hosts file rules have been applied successfully, note: applications might store previous hosts rules.", L"Se han aplicado con éxito las reglas del archivo hosts, nota: es posible que las aplicaciones almacenen reglas de hosts anteriores"},
+		{L"A new entry has been added into memory, however, current filter selection won't render it", L"Nueva entrada añadida a la memoria, pero no se renderizará con los filtros actuales"},
 
 		//warning_
 		{L"Reloading the list will overwrite any unsaved changes", L"Recargar la lista sobreescribira cambios no guardados"},

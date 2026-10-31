@@ -57,9 +57,9 @@ namespace FileInternals {
 		};
 
 		struct Data {
-			std::wstring domains;
-			std::wstring ip;
-			Type type;
+			std::wstring domains{ };
+			std::wstring ip{ };
+			Type type{ };
 		};
 	}
 
