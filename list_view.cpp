@@ -332,6 +332,32 @@ namespace List {
 
 	void ListView::resize(Screen::Data screen) {
 		using namespace Screen;
+
+		HDWP hDwp{ BeginDeferWindowPos(1) };
+
+		if (!hDwp) {
+			resize_fallback(screen);
+			return;
+		}
+
+		hDwp = DeferWindowPos(
+			hDwp, hwnd_, nullptr,
+			screen | From::Window | Dimension::Width | Percentage(5),
+			screen | From::Window | Dimension::Height | Percentage(5),
+			screen | From::Window | Dimension::Width | Percentage(90),
+			screen | From::Window | Dimension::Height | Percentage(80),
+			SWP_NOZORDER | SWP_NOACTIVATE
+		);
+		
+		if (hDwp != nullptr)
+			EndDeferWindowPos(hDwp);
+		else
+			resize_fallback(screen);
+	}
+
+	void ListView::resize_fallback(Screen::Data screen) {
+		using namespace Screen;
+
 		MoveWindow(
 			hwnd_,
 			screen | From::Window | Dimension::Width | Percentage(5),

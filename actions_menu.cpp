@@ -54,62 +54,59 @@ namespace ActionsMenu {
 
 		using namespace Screen;
 
-		const int b_y{
+		const int y{
 			screendata | From::Window | Dimension::Height | Percentage(90)
 		};
 
-		const int b_w{
+		const int w{
 			screendata | From::Window | Dimension::Width | Percentage(12)
 		};
 
-		const int b_h{
+		const int h{
 			screendata | From::Window | Dimension::Height | Percentage(6)
 		};
 
-		MoveWindow(
-			new_,
+		HDWP hDwp{ BeginDeferWindowPos(5) };
+
+		if (!hDwp) {
+			resize_fallback(y, w, h, screendata);
+			return;
+		}
+
+		hDwp = DeferWindowPos(
+			hDwp, new_, nullptr,
 			screendata | From::Window | Dimension::Width | Percentage(5),
-			b_y,
-			b_w,
-			b_h,
-			TRUE
+			y, w, h, SWP_NOZORDER | SWP_NOACTIVATE
 		);
 
-		MoveWindow(
-			delete_,
+		hDwp = DeferWindowPos(
+			hDwp, delete_, nullptr,
 			screendata | From::Window | Dimension::Width | Percentage(20),
-			b_y,
-			b_w,
-			b_h,
-			TRUE
+			y, w, h, SWP_NOZORDER | SWP_NOACTIVATE
 		);
 
-		MoveWindow(
-			apply_,
+		hDwp = DeferWindowPos(
+			hDwp, apply_, nullptr,
 			screendata | From::Window | Dimension::Width | Percentage(44),
-			b_y,
-			b_w,
-			b_h,
-			TRUE
+			y, w, h, SWP_NOZORDER | SWP_NOACTIVATE
 		);
 
-		MoveWindow(
-			save_,
+		hDwp = DeferWindowPos(
+			hDwp, save_, nullptr,
 			screendata | From::Window | Dimension::Width | Percentage(68),
-			b_y,
-			b_w,
-			b_h,
-			TRUE
+			y, w, h, SWP_NOZORDER | SWP_NOACTIVATE
 		);
 
-		MoveWindow(
-			discard_,
+		hDwp = DeferWindowPos(
+			hDwp, discard_, nullptr,
 			screendata | From::Window | Dimension::Width | Percentage(83),
-			b_y,
-			b_w,
-			b_h,
-			TRUE
+			y, w, h, SWP_NOZORDER | SWP_NOACTIVATE
 		);
+
+		if (hDwp != nullptr) 
+			EndDeferWindowPos(hDwp);
+		else 
+			resize_fallback(y, w, h, screendata);
 	}
 
 	void Buttons::update_labels() {
@@ -136,5 +133,54 @@ namespace ActionsMenu {
 	void Buttons::update_labels_(HWND to, Localization::Text text) {
 		if (SetWindowTextW(to, Localization::get_text(text).data()) == FALSE)
 			Message::display(Message::Type::CriticalError, Localization::Text::CriticalError_UIFailed);
+	}
+
+	void Buttons::resize_fallback(int y, int w, int h, Screen::Data screendata) {
+		using namespace Screen;
+
+		MoveWindow(
+			new_,
+			screendata | From::Window | Dimension::Width | Percentage(5),
+			y,
+			w,
+			h,
+			TRUE
+		);
+
+		MoveWindow(
+			delete_,
+			screendata | From::Window | Dimension::Width | Percentage(20),
+			y,
+			w,
+			h,
+			TRUE
+		);
+
+		MoveWindow(
+			apply_,
+			screendata | From::Window | Dimension::Width | Percentage(44),
+			y,
+			w,
+			h,
+			TRUE
+		);
+
+		MoveWindow(
+			save_,
+			screendata | From::Window | Dimension::Width | Percentage(68),
+			y,
+			w,
+			h,
+			TRUE
+		);
+
+		MoveWindow(
+			discard_,
+			screendata | From::Window | Dimension::Width | Percentage(83),
+			y,
+			w,
+			h,
+			TRUE
+		);
 	}
 }

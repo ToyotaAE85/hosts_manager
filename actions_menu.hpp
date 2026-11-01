@@ -15,7 +15,7 @@ namespace ActionsMenu {
 		HWND apply_{ };
 		HWND discard_{ };
 
-		void initialize(HWND parent, Screen::Data screendata);
+		void initialize(HWND parent, Screen::Data screen);
 		void resize(Screen::Data screendata);
 		void update_labels();
 		void enable_buttons(bool status);
@@ -23,6 +23,7 @@ namespace ActionsMenu {
 	private:
 
 		void update_labels_(HWND to, Localization::Text text);
+		void resize_fallback(int y, int w, int h, Screen::Data screen);
 	};
 
 }

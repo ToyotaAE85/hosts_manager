@@ -283,8 +283,8 @@ namespace System {
 
 
 	void MainWindow::resize_window_elements(std::int32_t nWidth, std::int32_t nHeight) {
-		// use DeferWindowPos instead, wip
 		screenData_.regenerate_client_size(nWidth, nHeight);
+
 		listView_.resize(screenData_);
 		buttons_.resize(screenData_);
 	}
@@ -310,10 +310,7 @@ namespace System {
 	LRESULT MainWindow::MessageHandler(UINT msg, WPARAM wParam, LPARAM lParam) {
 		switch (msg) {
 			case WM_CREATE: {
-
-				SetPropW(hwnd_, L"MAINMENUWINDOW", this);
 				prepare_ui();
-
 				return 0;
 			}
 			case WM_NOTIFY: {
@@ -333,7 +330,7 @@ namespace System {
 				MINMAXINFO* mmi = reinterpret_cast<MINMAXINFO*>(lParam);
 
 				mmi->ptMinTrackSize.x = screenData_ | From::Screen | Dimension::Width | Percentage(45);
-				mmi->ptMinTrackSize.y = screenData_ | From::Screen | Dimension::Height | Percentage(45);
+				mmi->ptMinTrackSize.y = screenData_ | From::Screen | Dimension::Height | Percentage(50);
 
 				return 0;
 			}

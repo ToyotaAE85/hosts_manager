@@ -104,6 +104,8 @@ namespace List {
 
 		void rewrite_data();
 
+		void resize_fallback(Screen::Data screen);
+
 		auto retrieve_filtered_view() const;
 
 		std::int32_t cell_to_vector_index(std::int32_t idx) const;
