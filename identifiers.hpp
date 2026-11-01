@@ -68,6 +68,7 @@ namespace WmId {
 		Request_Restore_File,
 		
 		ListMutated,
+		ListSelected,
 
 		Max = 0xBFFF
 	};

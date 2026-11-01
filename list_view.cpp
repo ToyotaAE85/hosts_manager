@@ -127,7 +127,7 @@ namespace List {
 		switch (lpmsg->code) {
 			
 			case NM_CUSTOMDRAW: {
-
+				break; //bruh
 			}
 			// this is doing WAAAY TOO MUCH, leave it for now lmao
 			case NM_DBLCLK: {
@@ -181,28 +181,39 @@ namespace List {
 				else if (item->iItem == -1) { // a bit odd that this would insert an entry...
 					insert_entry();
 				}
-				return 0;
+				break;
+			}
+			case LVN_ITEMCHANGED: {
+				LPNMLISTVIEW lpItem{ reinterpret_cast<LPNMLISTVIEW>(lParam) };
+
+				if ((lpItem->uChanged & LVIF_STATE) 
+					&& (lpItem->uNewState & LVIS_SELECTED) 
+					!= (lpItem->uOldState & LVIS_SELECTED)) {
+
+					std::int32_t idx{ ListView_GetNextItem(hwnd_, -1, LVNI_SELECTED) };
+
+					PostMessageW(GetParent(hwnd_), (UINT)WmId::Custom::ListSelected, 0, idx);
+				}
+
+				break;
 			}
 			case LVN_BEGINSCROLL: {
 				if (edit_ != nullptr)
 					DestroyWindow(edit_);
 				
-				return 0;
+				break;
 			}
 			case LVN_KEYDOWN: {
 				LPNMLVKEYDOWN key{ reinterpret_cast<LPNMLVKEYDOWN>(lParam) };
 
 				if (key->wVKey == VK_DELETE) {
 					delete_selected_entry();
-					return 0;
 				}
-
-				if (key->wVKey == VK_ESCAPE) {
+				else if (key->wVKey == VK_ESCAPE) {
+					ListView_SetItemState(hwnd_, -1, 0, LVIS_SELECTED);
 					SetFocus(GetParent(hwnd_));
-					return 0;
 				}
-
-				if (GetAsyncKeyState(VK_CONTROL) & 0x8000) {
+				else if (GetAsyncKeyState(VK_CONTROL) & 0x8000) {
 					switch (key->wVKey) {
 						case 'N': {
 							insert_entry();
@@ -214,11 +225,7 @@ namespace List {
 						}
 					}
 					
-					return 0;
 				}
-				break;
-			}
-			case LVN_ITEMCHANGED: {
 				break;
 			}
 		}
@@ -230,6 +237,7 @@ namespace List {
 		auto data{ FileInternals::load_data(FileInternals::from_target_file()) };
 
 		if (!data) {
+			// istg if i have to write another comment here ill lose it frfr
 			// WHY HAVENT WE DEALT WIT THIS YET?
 			// we should def deal wt this, later tho lmao
 			// Deal with the error later

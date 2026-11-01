@@ -27,19 +27,19 @@ namespace ActionsMenu {
 		new_ = create_window(base);
 
 
-		base.x = screendata | From::Window | Dimension::Width | Percentage(20);
-		base.id = static_cast<std::uint64_t>(WmId::Control::DeleteEntry);
-		delete_ = create_window(base);
-
-
 		base.x = screendata | From::Window | Dimension::Width | Percentage(44);
 		base.id = static_cast<std::uint64_t>(WmId::Control::ApplyFilter);
 		apply_ = create_window(base);
 
 
+		base.x = screendata | From::Window | Dimension::Width | Percentage(20);
+		base.style |= WS_DISABLED; // this change persists, careful down the line
+		base.id = static_cast<std::uint64_t>(WmId::Control::DeleteEntry);
+		delete_ = create_window(base);
+
+
 		base.x = screendata | From::Window | Dimension::Width | Percentage(68);
 		base.id = static_cast<std::uint64_t>(WmId::Control::SaveEntry);
-		base.style |= WS_DISABLED; // this change persists, careful down the line
 		save_ = create_window(base);
 
 

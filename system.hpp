@@ -85,6 +85,8 @@ namespace System {
 
 		void change_setting(WmId::Custom setting, WmId::MenuBar value);
 
+		void resize_window_elements(std::int32_t nWidth, std::int32_t nHeight);
+
 		void update_self_title();
 
 		void flush_dns();

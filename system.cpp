@@ -184,7 +184,8 @@ namespace System {
 		PROCESS_INFORMATION pi{ };
 		wchar_t cmd_args[]{ L"ipconfig.exe /flushdns" };
 
-		res = CreateProcessW(NULL, cmd_args, NULL, NULL, FALSE, CREATE_NO_WINDOW, NULL, NULL, &si, &pi);
+		res = CreateProcessW(NULL, cmd_args, NULL, NULL, 
+			FALSE, CREATE_NO_WINDOW, NULL, NULL, &si, &pi);
 
 		if (!res) {
 			Message::display(Message::Type::Warning, Localization::Text::Warning_CreateIPCProcessFailed);
@@ -281,6 +282,13 @@ namespace System {
 	}
 
 
+	void MainWindow::resize_window_elements(std::int32_t nWidth, std::int32_t nHeight) {
+		// use DeferWindowPos instead, wip
+		screenData_.regenerate_client_size(nWidth, nHeight);
+		listView_.resize(screenData_);
+		buttons_.resize(screenData_);
+	}
+
 	void MainWindow::handle_file_reload() {
 		const auto hosts_int{ FileInternals::validate_hosts() };
 
@@ -317,10 +325,7 @@ namespace System {
 				return 0;
 			}
 			case WM_SIZE: {
-				screenData_.regenerate_client_size(LOWORD(lParam), HIWORD(lParam));
-
-				listView_.resize(screenData_);
-				buttons_.resize(screenData_);
+				resize_window_elements(LOWORD(lParam), HIWORD(lParam));
 				return 0;
 			}
 			case WM_GETMINMAXINFO: {
@@ -354,21 +359,27 @@ namespace System {
 
 				WmId::Control cId{ static_cast<WmId::Control>(wId) };
 
+
 				if (cId == WmId::Control::ApplyFilter) {
 					flush_dns();
-					return 0;
-				}
-
-				if (cId == WmId::Control::SaveEntry) {
+				} 
+				else if (cId == WmId::Control::SaveEntry) {
 					save_data();
-					return 0;
-				}
-
-				if (cId == WmId::Control::DiscardChanges) {
+				} 
+				else if (cId == WmId::Control::DiscardChanges) {
 					handle_file_reload();
-					return 0;
+				} 
+				else if (cId == WmId::Control::NewEntry) {
+					listView_.insert_entry();
+				}
+				else if (cId == WmId::Control::DeleteEntry) {
+					listView_.delete_selected_entry();
 				}
 
+				ListView_SetItemState(listView_.hwnd(), -1, 0, LVIS_SELECTED);
+				EnableWindow(buttons_.delete_, FALSE);
+
+				SetFocus(hwnd_);
 				return 0;
 			}
 			case WM_CLOSE: {
@@ -431,6 +442,13 @@ namespace System {
 			case (UINT)WmId::Custom::ListMutated: {
 				buttons_.enable_buttons(inner_settings_.changes_performed = true);
 				update_self_title();
+				return 0;
+			}
+			case (UINT)WmId::Custom::ListSelected: {
+
+				auto idx{ lParam };
+				EnableWindow(buttons_.delete_, idx != -1);
+
 				return 0;
 			}
 		}
