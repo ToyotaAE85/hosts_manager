@@ -13,11 +13,6 @@
 #include <type_traits>
 #include <utility>
 
-namespace Constants {
-	constexpr inline unsigned int MinTextSize{ 10 };
-	constexpr inline unsigned int MaxTextSize{ 25 };
-}
-
 namespace System {
 
 	struct Settings {

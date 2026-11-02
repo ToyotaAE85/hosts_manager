@@ -33,5 +33,7 @@ namespace Menu {
 		bool check_item(HMENU hMenu, WmId::MenuBar target, bool check);
 
 		bool rename_item(HMENU hMenu, WmId::MenuBar id, std::wstring_view new_text);
+
+		bool disable_item(HMENU hMenu, WmId::MenuBar id);
 	};
 }

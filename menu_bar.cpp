@@ -100,6 +100,17 @@ namespace Menu {
 		return SetMenuItemInfoW(hMenu, static_cast<UINT>(id), FALSE, &mii);
 	}
 
+
+	bool MenuBar::disable_item(HMENU hMenu, WmId::MenuBar id) {
+
+		MENUITEMINFOW mii{ };
+		mii.cbSize = sizeof(MENUITEMINFOW);
+		mii.fMask = MIIM_STATE;
+		mii.fState = MF_DISABLED;
+
+		return SetMenuItemInfoW(hMenu, static_cast<UINT>(id), FALSE, &mii);
+	}
+
 	bool MenuBar::update_labels(HMENU hMenu) {
 
 		const auto language{ Language::get() };
@@ -112,6 +123,11 @@ namespace Menu {
 		check_item(hMenu, WmId::MenuBar::Filter_Invalid, filtermodes_ & 1);
 		check_item(hMenu, WmId::MenuBar::Filter_Blank, filtermodes_ & (1 << 1));
 		check_item(hMenu, WmId::MenuBar::Filter_Comments, filtermodes_ & (1 << 2));
+
+		if (textsize_ >= Constants::MaxTextSize)
+			disable_item(hMenu, WmId::MenuBar::Text_IncreaseSize);
+		else if (textsize_ <= Constants::MinTextSize)
+			disable_item(hMenu, WmId::MenuBar::Text_DecreaseSize);
 
 		const std::wstring current_size_text{ std::format(L"{}: {}",
 			Localization::get_text(Localization::Text::Text_ActualSize), textsize_) };

@@ -34,4 +34,10 @@
 #pragma comment(lib, "comctl32.lib")
 #pragma comment(lib, "Ws2_32.lib")
 
+
+namespace Constants {
+    constexpr inline unsigned int MinTextSize{ 10 };
+    constexpr inline unsigned int MaxTextSize{ 25 };
+}
+
 // https://learn.microsoft.com/en-us/windows/win32/controls/cookbook-overview
