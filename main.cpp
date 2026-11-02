@@ -18,7 +18,7 @@ int WINAPI wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE, _In_ PWSTR, _I
 			DispatchMessageW(&msg);
 		}
 	}
-	catch (std::exception& e) {
+	catch (const std::exception& e) {
 		MessageBoxA(nullptr, e.what(), "TERMINAL ERROR: ", MB_ICONERROR | MB_OK);
 	}
 
