@@ -24,10 +24,10 @@ namespace Menu {
 		DrawMenuBar(parent_);
 	}
 
-	MenuBar& MenuBar::update_menu_settings(std::uint32_t text_size, std::uint32_t filter_modes) noexcept {
+	MenuBar& MenuBar::update_settings(std::uint32_t text_size, std::uint32_t filter_modes) {
 		textsize_ = text_size;
 		filtermodes_ = filter_modes;
-
+		
 		return *this;
 	}
 
@@ -75,12 +75,12 @@ namespace Menu {
 		AppendToMenu(hMenu, MF_POPUP, (UINT_PTR)hFile, Localization::Text::Menu_File);
 		AppendToMenu(hMenu, MF_POPUP, (UINT_PTR)hSettings, Localization::Text::Menu_Settings);
 
-		update_menu_labels(hMenu);
+		update_labels(hMenu);
 
 		return hMenu;
 	}
 
-	bool MenuBar::check_menu_item(HMENU hMenu, WmId::MenuBar id, bool check) {
+	bool MenuBar::check_item(HMENU hMenu, WmId::MenuBar id, bool check) {
 
 		MENUITEMINFOW mii{ };
 		mii.cbSize = sizeof(MENUITEMINFOW);
@@ -90,7 +90,7 @@ namespace Menu {
 		return SetMenuItemInfoW(hMenu, static_cast<UINT>(id), FALSE, &mii);
 	}
 
-	bool MenuBar::rename_menu_item(HMENU hMenu, WmId::MenuBar id, std::wstring_view new_text) {
+	bool MenuBar::rename_item(HMENU hMenu, WmId::MenuBar id, std::wstring_view new_text) {
 
 		MENUITEMINFOW mii{ };
 		mii.cbSize = sizeof(MENUITEMINFOW);
@@ -100,28 +100,30 @@ namespace Menu {
 		return SetMenuItemInfoW(hMenu, static_cast<UINT>(id), FALSE, &mii);
 	}
 
-	bool MenuBar::update_menu_labels(HMENU hMenu) {
+	bool MenuBar::update_labels(HMENU hMenu) {
 
 		const auto language{ Language::get() };
 
 		switch (language) {
-			case Language::Type::Spanish: check_menu_item(hMenu, WmId::MenuBar::Language_Spanish, true); break;
-			default: check_menu_item(hMenu, WmId::MenuBar::Language_English, true); break;
+			case Language::Type::Spanish: check_item(hMenu, WmId::MenuBar::Language_Spanish, true); break;
+			default: check_item(hMenu, WmId::MenuBar::Language_English, true); break;
 		}
 
-		check_menu_item(hMenu, WmId::MenuBar::Filter_Invalid, filtermodes_ & 1);
-		check_menu_item(hMenu, WmId::MenuBar::Filter_Blank, filtermodes_ & (1 << 1));
-		check_menu_item(hMenu, WmId::MenuBar::Filter_Comments, filtermodes_ & (1 << 2));
+		check_item(hMenu, WmId::MenuBar::Filter_Invalid, filtermodes_ & 1);
+		check_item(hMenu, WmId::MenuBar::Filter_Blank, filtermodes_ & (1 << 1));
+		check_item(hMenu, WmId::MenuBar::Filter_Comments, filtermodes_ & (1 << 2));
 
-		const std::wstring current_size_text{ std::format(L"{}: {}", Localization::get_text(Localization::Text::Text_ActualSize), textsize_) };
-		rename_menu_item(hMenu, WmId::MenuBar::Text_ActualSize, current_size_text);
+		const std::wstring current_size_text{ std::format(L"{}: {}",
+			Localization::get_text(Localization::Text::Text_ActualSize), textsize_) };
+		
+		rename_item(hMenu, WmId::MenuBar::Text_ActualSize, current_size_text);
 
 		return true;
 	}
 
-	// WPARAM contains the value to change to
+	//i feel like this could be simplified a lot more, hmm...
 
-	LRESULT MenuBar::MessageHandler(WORD cmd) {
+	LRESULT MenuBar::message_handler(WORD cmd) {
 
 		const auto language{ Language::get() };
 		auto wmId{ static_cast<WmId::MenuBar>(cmd) };
@@ -141,9 +143,9 @@ namespace Menu {
 
 				return 0;
 			}
-			case WmId::MenuBar::Filter_Invalid: [[fallthrough]];
-			case WmId::MenuBar::Filter_Blank: [[fallthrough]];
-			case WmId::MenuBar::Filter_Comments: [[fallthrough]];
+			case WmId::MenuBar::Filter_Invalid:		[[fallthrough]];
+			case WmId::MenuBar::Filter_Blank:		[[fallthrough]];
+			case WmId::MenuBar::Filter_Comments:	[[fallthrough]];
 			case WmId::MenuBar::Filter_All: {
 				PostMessageW(parent_, (UINT)WmId::Custom::Request_Filter_Change, (WPARAM)wmId, 0);
 				return 0;
@@ -152,10 +154,9 @@ namespace Menu {
 				PostMessageW(parent_, (UINT)WmId::Custom::Request_List_Reload, 0, 0);
 				return 0;
 			}
-			case WmId::MenuBar::Text_IncreaseSize: [[fallthrough]];
+			case WmId::MenuBar::Text_IncreaseSize:	[[fallthrough]];
 			case WmId::MenuBar::Text_DecreaseSize: {
-				//text_size += wmId == WmId::MenuBar::Text_DecreaseSize ? -1 : 1;
-				//update_setting(Setting::TextSize{}, text_size, WmId::Custom::Request_TextSize_Change);
+				PostMessageW(parent_, (UINT)WmId::Custom::Request_TextSize_Change, (WPARAM)wmId, 0);
 				return 0;
 			}
 			case WmId::MenuBar::File_Exit: {
@@ -175,7 +176,8 @@ namespace Menu {
 				PostMessageW(parent_, (UINT)WmId::Custom::Request_Restore_File, 0, 0);
 				return 0;
 			}
-			default: break;
+			default:
+				break;
 		}
 
 		return 0;

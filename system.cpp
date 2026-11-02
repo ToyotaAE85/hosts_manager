@@ -8,7 +8,7 @@
 #include <algorithm>
 
 namespace System {
-
+	
 	MainWindow::MainWindow(HINSTANCE hInst) noexcept : hInstance_{ hInst } {}
 
 	void MainWindow::initialize(int nCmdShow) {
@@ -44,28 +44,29 @@ namespace System {
 		using namespace Localization;
 		using namespace Screen;
 
+		const auto& [textsize, filters, changes] { inner_settings_ };
+
 		screenData_.generate(hwnd_);
 
-		menuBar_.create(hwnd_);
+		menuBar_.update_settings(textsize, filters).create(hwnd_);
 
 		listView_.create(hwnd_).populate_columns(
-			ColumnData{ .name = get_text(Text::Lv_Line), .fmt = LVCFMT_CENTER, 
+			ColumnData{ .name = get_text(Text::Lv_Line), .fmt = LVCFMT_CENTER,
 				.size = screenData_ | From::Window | Dimension::Width | Percentage(5) },
-			
-			ColumnData{ .name = get_text(Text::Lv_Ip), .fmt = LVCFMT_CENTER, 
-			.size = screenData_ | From::Window | Dimension::Width | Percentage(5) },
-			
-			ColumnData{ .name = get_text(Text::Lv_Type), .fmt = LVCFMT_CENTER, 
-			.size = screenData_ | From::Window | Dimension::Width | Percentage(5) },
-			
-			ColumnData{ .name = get_text(Text::Lv_Domain), .fmt = LVCFMT_LEFT, 
-			.size = screenData_ | From::Window | Dimension::Width | Percentage(70) }
-		).populate_rows(PopulateRows::FromFile);
 
-		buttons_.initialize(hwnd_, screenData_);
-		buttons_.enable_buttons(inner_settings_.changes_performed);
+			ColumnData{ .name = get_text(Text::Lv_Ip), .fmt = LVCFMT_CENTER,
+			.size = screenData_ | From::Window | Dimension::Width | Percentage(5) },
 
-		//initialize_fonts();
+			ColumnData{ .name = get_text(Text::Lv_Type), .fmt = LVCFMT_CENTER,
+			.size = screenData_ | From::Window | Dimension::Width | Percentage(5) },
+
+			ColumnData{ .name = get_text(Text::Lv_Domain), .fmt = LVCFMT_LEFT,
+			.size = screenData_ | From::Window | Dimension::Width | Percentage(70) })
+			.populate_rows(PopulateRows::FromFile)
+			.set_font_height(textsize);
+
+		buttons_.initialize(hwnd_, screenData_)
+			.set_font_height(textsize).enable_buttons(changes);
 
 	}
 
@@ -188,7 +189,11 @@ namespace System {
 			FALSE, CREATE_NO_WINDOW, NULL, NULL, &si, &pi);
 
 		if (!res) {
-			Message::display(Message::Type::Warning, Localization::Text::Warning_CreateIPCProcessFailed);
+			int mres{ Message::display(Message::Type::Warning, Localization::Text::Warning_CreateIPCProcessFailed) };
+
+			if (mres == IDNO)
+				PostQuitMessage(0);
+
 			return;
 		}
 
@@ -226,22 +231,14 @@ namespace System {
 		
 		using namespace WmId;
 
-
-		if (setting == Custom::Min || setting > Custom::Request_TextSize_Change)
-			return;
-
-		if (value < WmId::MenuBar::Text_IncreaseSize || value > WmId::MenuBar::Language_English)
-			return;
-
-		
 		auto& [text_size, filter_modes, _] { inner_settings_ };
 
 		if (setting == Custom::Request_Language_Change) {
 
-			switch (value) {
-				case MenuBar::Language_Spanish: Language::set(Language::Type::Spanish); break;
-				default: Language::set(Language::Type::English); break;
-			}
+			if (value == MenuBar::Language_Spanish)
+				Language::set(Language::Type::Spanish);
+			else
+				Language::set(Language::Type::English);
 			
 			update_self_title();
 			buttons_.update_labels();
@@ -264,20 +261,22 @@ namespace System {
 		}
 		else if (setting == Custom::Request_TextSize_Change) {
 
-			if (text_size == Constants::MinTextSize || text_size == Constants::MaxTextSize)
-				return;
+			int nts{ value == MenuBar::Text_DecreaseSize ? -1 : 1 };
 
-			if (value == MenuBar::Text_DecreaseSize) {
-				text_size = std::clamp(text_size - 1, Constants::MinTextSize, Constants::MaxTextSize);
-			}
-			else {
-				text_size = std::clamp(text_size + 1, Constants::MinTextSize, Constants::MaxTextSize);
-			}
+			text_size = std::clamp(text_size + nts, Constants::MinTextSize, Constants::MaxTextSize);
 
-			//further logic here
+			nts = text_size + nts;
+
+			if (nts < Constants::MinTextSize || 
+				nts > Constants::MaxTextSize)
+				MessageBeep(MB_OK);
+
+			listView_.set_font_height(text_size);
+			buttons_.set_font_height(text_size);
+
 		}
 
-		menuBar_.update_menu_settings(text_size, filter_modes).create(hwnd_);
+		menuBar_.update_settings(text_size, filter_modes).create(hwnd_);
 		
 	}
 
@@ -350,7 +349,7 @@ namespace System {
 				WmId::MenuBar mId{ static_cast<WmId::MenuBar>(wId) };
 
 				if (mId > WmId::MenuBar::Min && mId < WmId::MenuBar::Max) {
-					menuBar_.MessageHandler(wId);
+					menuBar_.message_handler(wId);
 					return 0;
 				}
 
@@ -367,7 +366,7 @@ namespace System {
 					handle_file_reload();
 				} 
 				else if (cId == WmId::Control::NewEntry) {
-					listView_.insert_entry();
+					listView_.insert_new_entry();
 				}
 				else if (cId == WmId::Control::DeleteEntry) {
 					listView_.delete_selected_entry();
@@ -400,6 +399,25 @@ namespace System {
 				}
 				break;
 			}
+			case WM_MOUSEWHEEL: {
+
+				auto vKey{ GET_KEYSTATE_WPARAM(wParam) };
+				auto mDelta{ GET_WHEEL_DELTA_WPARAM(wParam) };
+
+				if (vKey == MK_CONTROL) {
+					if (mDelta > 0) {
+						change_setting(WmId::Custom::Request_TextSize_Change, 
+							WmId::MenuBar::Text_IncreaseSize);
+					}
+					else if (mDelta < 0) {
+						change_setting(WmId::Custom::Request_TextSize_Change,
+							WmId::MenuBar::Text_DecreaseSize);
+					}
+				}
+
+				break;
+			}
+
 			case (UINT)WmId::Custom::Request_Language_Change: {
 
 				change_setting(WmId::Custom::Request_Language_Change, static_cast<WmId::MenuBar>(wParam));

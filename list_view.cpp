@@ -93,8 +93,7 @@ namespace List {
 		}
 		catch (...) {
 			Message::display(Message::Type::Error, Localization::Text::Error_IndexParsingFailed);
-			
-			return 0;
+			return -1;
 		}
 
 		// cell_idx contains 1-indexed element, hence -1 needed here.
@@ -136,23 +135,29 @@ namespace List {
 				if (item->iItem != -1 && (item->iSubItem == 1 || item->iSubItem == 3)) {
 
 					edit_state* obj{ new edit_state };
+					auto& [instance, itm, sitm, entryidx, field] { *obj };
 					
-					obj->instance_ = this;
-					obj->item_ = item->iItem;
-					obj->sbitem_ = item->iSubItem;
-					obj->field_ = item->iSubItem == 1 ? UpdateField::IpAddress : UpdateField::Domains;
+					instance = this;
+					itm = item->iItem;
+					sitm = item->iSubItem;
+					field = item->iSubItem == 1 ? UpdateField::IpAddress : UpdateField::Domains;
 
 					RECT sl_rect{ };
-					ListView_GetSubItemRect(hwnd_, obj->item_, obj->sbitem_, LVIR_BOUNDS, &sl_rect);
+					ListView_GetSubItemRect(hwnd_, itm, sitm, LVIR_BOUNDS, &sl_rect);
 
-					obj->entry_idx_ = cell_to_vector_index(obj->item_);
+					entryidx = cell_to_vector_index(itm);
+
+					if (entryidx < 0) {
+						delete obj;
+						return 1;
+					}
 
 					std::wstring buffer{  };
 
-					if (obj->field_ == UpdateField::IpAddress) 
-						buffer = line_data_[obj->entry_idx_].ip;
+					if (field == UpdateField::IpAddress) 
+						buffer = line_data_[entryidx].ip;
 					else 
-						buffer =line_data_[obj->entry_idx_].domains;
+						buffer = line_data_[entryidx].domains;
 					
 					edit_ = Win32Utility::create_window({
 						.exStyle = WS_EX_CLIENTEDGE,
@@ -168,7 +173,7 @@ namespace List {
 						.hInst = GetModuleHandleW(NULL),
 					});
 
-					HFONT hFont = (HFONT)SendMessageW(hwnd_, WM_GETFONT, 0, 0);
+					HFONT hFont{ reinterpret_cast<HFONT>(SendMessageW(hwnd_, WM_GETFONT, 0, 0)) };
 					SendMessageW(edit_, WM_SETFONT, (WPARAM)hFont, TRUE);
 
 					SendMessageW(edit_, EM_SETSEL, 0, -1);
@@ -179,7 +184,7 @@ namespace List {
 					}
 				}
 				else if (item->iItem == -1) { // a bit odd that this would insert an entry...
-					insert_entry();
+					insert_new_entry();
 				}
 				break;
 			}
@@ -216,7 +221,7 @@ namespace List {
 				else if (GetAsyncKeyState(VK_CONTROL) & 0x8000) {
 					switch (key->wVKey) {
 						case 'N': {
-							insert_entry();
+							insert_new_entry();
 							break;
 						}
 						case 'X': {
@@ -230,6 +235,34 @@ namespace List {
 			}
 		}
 		return 0;
+	}
+
+	ListView& ListView::set_font_height(std::int32_t new_height) {
+
+		if (font_data_.empty())
+			assign_font_data();
+		
+		for (auto& font : font_data_) {
+			font.data.font_height = new_height;
+
+			Win32Utility::apply_font(font);
+		}
+		
+		return *this;
+	}
+
+	void ListView::assign_font_data() {
+
+		Win32Utility::FontControl ctrl{};
+		auto& [font, target, data] { ctrl };
+
+		target = hwnd_;
+		font_data_.push_back(ctrl);
+
+		target = ListView_GetHeader(hwnd_);
+		data.font_weight = 700;
+		font_data_.push_back(ctrl);
+
 	}
 
 	void ListView::rewrite_data() {
@@ -437,7 +470,7 @@ namespace List {
 		PostMessageW(GetParent(hwnd_), (UINT)WmId::Custom::ListMutated, 0, 0);
 	}
 
-	void ListView::insert_entry() {
+	void ListView::insert_new_entry() {
 		line_data_.push_back({ .type = FileInternals::Line::Type::BLANK });
 
 		if (entry_is_filtered(line_data_.back().type))

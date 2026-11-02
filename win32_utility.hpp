@@ -7,7 +7,7 @@
 
 namespace Win32Utility {
 
-	struct CreateWindowData {
+	struct WindowData {
 		DWORD exStyle{ 0 };
 
 		std::wstring_view className;
@@ -26,8 +26,8 @@ namespace Win32Utility {
 		LPVOID lpParam{ nullptr };
 	};
 
-	struct CreateFontData {
-		std::int32_t font_height;
+	struct FontData {
+		std::int32_t font_height{ 0 };
 		std::int32_t font_width{ 0 };
 
 		std::int32_t escape_angle{ 0 };
@@ -50,13 +50,15 @@ namespace Win32Utility {
 		LPCWSTR font_name{ L"Segoe UI" };
 	};
 
-	struct FontData {
+	struct FontControl {
 		HFONT font;
 		HWND target;
-		CreateFontData data;
+		FontData data;
 	};
 
-	HWND create_window(const CreateWindowData& data);
+	HWND create_window(const WindowData& data);
 
-	HFONT create_font(const CreateFontData& data);
+	HFONT create_font(const FontData& data);
+
+	void apply_font(FontControl& input);
 }

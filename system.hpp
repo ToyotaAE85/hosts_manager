@@ -45,23 +45,6 @@ namespace System {
 		void initialize(int);
 		
 	private:
-		// maybe keep this, just make it work already lmfao
-		template<std::same_as<Win32Utility::FontData> ...T >
-		void apply_font_to(T& ... args) {
-			([&](auto& par) {
-				auto& [font, hwnd, data] { par };
-
-				HFONT new_font{ Win32Utility::create_font(data) };
-
-				SendMessageW(hwnd, WM_SETFONT, reinterpret_cast<WPARAM>(new_font), TRUE);
-
-				if (font)
-					DeleteFontW(font);
-
-				font = new_font;
-
-			}(args), ...);
-		}
 
 		//hmmm, not sure about this one.
 		template<typename T>

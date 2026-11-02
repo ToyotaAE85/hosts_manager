@@ -6,11 +6,11 @@
 
 namespace ActionsMenu {
 
-	void Buttons::initialize(HWND parent, Screen::Data screendata) {
+	Buttons& Buttons::initialize(HWND parent, Screen::Data screendata) {
 		using namespace Screen;
 		using namespace Win32Utility;
 
-		Win32Utility::CreateWindowData base{
+		Win32Utility::WindowData base{
 			.exStyle = WS_EX_WINDOWEDGE,
 			.className = L"BUTTON",
 			.windowName = L"UNNAMED",
@@ -48,6 +48,8 @@ namespace ActionsMenu {
 		discard_ = create_window(base);
 
 		update_labels();
+
+		return *this;
 	}
 
 	void Buttons::resize(Screen::Data screendata) {
@@ -119,15 +121,51 @@ namespace ActionsMenu {
 
 	}
 
-	void Buttons::enable_buttons(bool status) {
-
-		// save & revert are enabled if changes are performed on the list.
-		// apply is disabled if changes are performed
-		// delete entry is only enabled if a listview item is selected (manual behaviour)
+	Buttons& Buttons::enable_buttons(bool status) {
 
 		EnableWindow(save_, status);
 		EnableWindow(discard_, status);
 		EnableWindow(apply_, !status);
+
+		return *this;
+	}
+
+	Buttons& Buttons::set_font_height(int new_height) {
+
+		if (font_data_.empty())
+			assign_font_data();
+
+		for (auto& font : font_data_) {
+			font.data.font_height = new_height;
+
+			Win32Utility::apply_font(font);
+		}
+
+		return *this;
+	}
+
+
+	void Buttons::assign_font_data() {
+
+		Win32Utility::FontControl ctrl{};
+		auto& [font, target, data] { ctrl };
+
+		target = new_;
+		font_data_.push_back(ctrl);
+
+		target = delete_;
+		font_data_.push_back(ctrl);
+
+		target = save_;
+		font_data_.push_back(ctrl);
+
+		target = discard_;
+		font_data_.push_back(ctrl);
+
+		target = apply_;
+		data.font_weight = 500;
+		font_data_.push_back(ctrl);
+
 	}
 
 	void Buttons::update_labels_(HWND to, Localization::Text text) {

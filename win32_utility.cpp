@@ -5,7 +5,7 @@
 
 namespace Win32Utility {
 
-	HWND create_window(const CreateWindowData& data) {
+	HWND create_window(const WindowData& data) {
 
 		HWND wnd{ CreateWindowExW(data.exStyle,
 			data.className.data(), data.windowName.data(), data.style,
@@ -19,7 +19,7 @@ namespace Win32Utility {
 		return wnd;
 	}
 
-	HFONT create_font(const CreateFontData& data) {
+	HFONT create_font(const FontData& data) {
 		HFONT fnt{
 			CreateFontW(data.font_height, data.font_width, data.escape_angle, data.orientation,data.font_weight,
 				data.italic, data.underline, data.strike_out, data.char_set, data.out_precision, data.clip_precision,
@@ -30,6 +30,29 @@ namespace Win32Utility {
 			Message::display(Message::Type::Error, Localization::Text::Error_FontCreationFailed);
 
 		return fnt;
+	}
+
+
+	void apply_font(FontControl& input) {
+
+		auto& [font, target, fontdata] { input };
+
+		if (!target)
+			return;
+
+		HFONT replacement{ create_font(fontdata) };
+
+		if (!replacement)
+			return;
+
+		HFONT prev{ font };
+
+		font = replacement;
+		SendMessageW(target, WM_SETFONT, reinterpret_cast<WPARAM>(font), TRUE);
+
+		if (prev)
+			DeleteObject(prev);
+
 	}
 
 }

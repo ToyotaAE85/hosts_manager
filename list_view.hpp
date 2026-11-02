@@ -1,4 +1,7 @@
+#pragma once // how could i forget this simple thing omfg
+
 #include "./win32_api.hpp"
+#include "./win32_utility.hpp"
 
 #include "./file_internals.hpp"
 #include "./screen.hpp"
@@ -35,6 +38,7 @@ namespace List {
 		HWND hwnd_{ };
 
 		std::vector<FileInternals::Line::Data> line_data_{ };
+		std::vector<Win32Utility::FontControl> font_data_{ };
 
 		std::uint32_t filter_modes_{ };
 		std::uint32_t list_idx_{ };
@@ -84,25 +88,29 @@ namespace List {
 
 		ListView& populate_rows(PopulateRows input);
 
+		ListView& set_font_height(std::int32_t new_height);
+
 		LRESULT message_handler(LPARAM lParam);
 
 		void refresh_list(PopulateRows from);
 
 		void update_labels();
 
-		void update_entry(const edit_state& data, std::wstring_view str);
-
 		const std::vector<FileInternals::Line::Data>& data() const;
 
 		void resize(Screen::Data screen);
 
-		void insert_entry();
+		void insert_new_entry();
 
 		void delete_selected_entry();
+
+		void update_entry(const edit_state& data, std::wstring_view str);
 
 	private:
 
 		void rewrite_data();
+
+		void assign_font_data();
 
 		void resize_fallback(Screen::Data screen);
 

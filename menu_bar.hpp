@@ -19,18 +19,19 @@ namespace Menu {
 
 		void create(HWND parent);
 
-		LRESULT MessageHandler(WORD cmd);
+		LRESULT message_handler(WORD cmd);
 
-		MenuBar& update_menu_settings(std::uint32_t text_size, std::uint32_t filter_modes) noexcept;
+		// updating settings requires a full recreation of the menu, call create() afterwards
+		MenuBar& update_settings(std::uint32_t text_size, std::uint32_t filter_modes);
 
 	private:
 
 		HMENU build_menu();
 
-		bool update_menu_labels(HMENU hMenu);
+		bool update_labels(HMENU hMenu);
 
-		bool check_menu_item(HMENU hMenu, WmId::MenuBar target, bool check);
+		bool check_item(HMENU hMenu, WmId::MenuBar target, bool check);
 
-		bool rename_menu_item(HMENU hMenu, WmId::MenuBar id, std::wstring_view new_text);
+		bool rename_item(HMENU hMenu, WmId::MenuBar id, std::wstring_view new_text);
 	};
 }
