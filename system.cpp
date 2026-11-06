@@ -215,6 +215,7 @@ namespace System {
 		buttons_.enable_buttons(inner_settings_.changes_performed = false);
 		update_self_title();
 		listView_.refresh_list(List::PopulateRows::FromFile);
+
 		Message::display(Message::Type::Info, Localization::Text::Info_FileSaveSuccess);
 	}
 
@@ -279,7 +280,6 @@ namespace System {
 		menuBar_.update_settings(text_size, filter_modes).create(hwnd_);
 		
 	}
-
 
 	void MainWindow::resize_window_elements(std::int32_t nWidth, std::int32_t nHeight) {
 		screenData_.regenerate_client_size(nWidth, nHeight);
@@ -366,16 +366,20 @@ namespace System {
 					handle_file_reload();
 				} 
 				else if (cId == WmId::Control::NewEntry) {
+					SetFocus(listView_.hwnd());
 					listView_.insert_new_entry();
 				}
 				else if (cId == WmId::Control::DeleteEntry) {
 					listView_.delete_selected_entry();
 				}
 
-				ListView_SetItemState(listView_.hwnd(), -1, 0, LVIS_SELECTED);
-				EnableWindow(buttons_.delete_, FALSE);
+				if (cId != WmId::Control::NewEntry) {
+					ListView_SetItemState(listView_.hwnd(), -1, 0, LVIS_SELECTED);
+					EnableWindow(buttons_.delete_, FALSE);
 
-				SetFocus(hwnd_);
+					SetFocus(hwnd_);
+				}
+
 				return 0;
 			}
 			case WM_CLOSE: {
@@ -418,48 +422,48 @@ namespace System {
 				break;
 			}
 
-			case (UINT)WmId::Custom::Request_Language_Change: {
+			case static_cast<UINT>(WmId::Custom::Request_Language_Change): {
 
 				change_setting(WmId::Custom::Request_Language_Change, static_cast<WmId::MenuBar>(wParam));
 				Message::display(Message::Type::Info, Localization::Text::Info_LanguageUpdate);
 
 				return 0;
 			} 
-			case (UINT)WmId::Custom::Request_Filter_Change: {
+			case static_cast<UINT>(WmId::Custom::Request_Filter_Change): {
 				
 				change_setting(WmId::Custom::Request_Filter_Change, static_cast<WmId::MenuBar>(wParam));
 				Message::display(Message::Type::Info, Localization::Text::Info_ListRowsUpdate);
 
 				return 0;
 			}
-			case (UINT)WmId::Custom::Request_TextSize_Change: {
+			case static_cast<UINT>(WmId::Custom::Request_TextSize_Change): {
 				change_setting(WmId::Custom::Request_TextSize_Change, static_cast<WmId::MenuBar>(wParam));
 				return 0;
 			}
-			case (UINT)WmId::Custom::Request_List_Reload: {
+			case static_cast<UINT>(WmId::Custom::Request_List_Reload): {
 				handle_file_reload();
 				return 0;
 			}
 
-			case (UINT)WmId::Custom::Request_Clear_File: {
+			case static_cast<UINT>(WmId::Custom::Request_Clear_File): {
 				handle_file_cleanup();
 				return 0;
 			}
 
-			case (UINT)WmId::Custom::Request_Backup_File: {
+			case static_cast<UINT>(WmId::Custom::Request_Backup_File): {
 				handle_file_backup();
 				return 0;
 			}
-			case (UINT)WmId::Custom::Request_Restore_File: {
+			case static_cast<UINT>(WmId::Custom::Request_Restore_File): {
 				handle_file_restore();
 				return 0;
 			}
-			case (UINT)WmId::Custom::ListMutated: {
+			case static_cast<UINT>(WmId::Custom::ListMutated): {
 				buttons_.enable_buttons(inner_settings_.changes_performed = true);
 				update_self_title();
 				return 0;
 			}
-			case (UINT)WmId::Custom::ListSelected: {
+			case static_cast<UINT>(WmId::Custom::ListSelected): {
 
 				auto idx{ lParam };
 				EnableWindow(buttons_.delete_, idx != -1);

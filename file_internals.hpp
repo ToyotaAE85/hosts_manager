@@ -11,7 +11,7 @@
 
 namespace FileInternals {
 
-	inline const std::filesystem::path dir_name{ "DegreeProjectBackup" };
+	inline const std::filesystem::path dir_name{ L"DegreeProjectBackup" };
 
 	inline std::filesystem::path hosts{ LR"(C:\Windows\System32\drivers\etc\hosts)" };
 

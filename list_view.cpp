@@ -174,12 +174,12 @@ namespace List {
 					});
 
 					HFONT hFont{ reinterpret_cast<HFONT>(SendMessageW(hwnd_, WM_GETFONT, 0, 0)) };
-					SendMessageW(edit_, WM_SETFONT, (WPARAM)hFont, TRUE);
+					SendMessageW(edit_, WM_SETFONT, reinterpret_cast<WPARAM>(hFont), TRUE);
 
 					SendMessageW(edit_, EM_SETSEL, 0, -1);
 					SetFocus(edit_);
 						
-					if (!SetWindowSubclass(edit_, ListView::edit_sub_class_procc, 0, (DWORD_PTR)obj)) {
+					if (!SetWindowSubclass(edit_, ListView::edit_sub_class_procc, 0, reinterpret_cast<DWORD_PTR>(obj))) {
 						delete obj;
 					}
 				}
@@ -197,7 +197,7 @@ namespace List {
 
 					std::int32_t idx{ ListView_GetNextItem(hwnd_, -1, LVNI_SELECTED) };
 
-					PostMessageW(GetParent(hwnd_), (UINT)WmId::Custom::ListSelected, 0, idx);
+					PostMessageW(GetParent(hwnd_), static_cast<UINT>(WmId::Custom::ListSelected), 0, idx);
 				}
 
 				break;
@@ -356,7 +356,7 @@ namespace List {
 		if (entry_is_filtered(type))
 			ListView_DeleteItem(hwnd_, lvidx);
 
-		PostMessageW(GetParent(hwnd_), (UINT)WmId::Custom::ListMutated, 0, 0);
+		PostMessageW(GetParent(hwnd_), static_cast<UINT>(WmId::Custom::ListMutated), 0, 0);
 	}
 
 	const std::vector<FileInternals::Line::Data>& ListView::data() const {
@@ -467,18 +467,23 @@ namespace List {
 		SendMessageW(hwnd_, WM_SETREDRAW, TRUE, 0);
 		InvalidateRect(hwnd_, NULL, TRUE);
 
-		PostMessageW(GetParent(hwnd_), (UINT)WmId::Custom::ListMutated, 0, 0);
+		PostMessageW(GetParent(hwnd_), static_cast<UINT>(WmId::Custom::ListMutated), 0, 0);
 	}
 
 	void ListView::insert_new_entry() {
-		line_data_.push_back({ .type = FileInternals::Line::Type::BLANK });
+		line_data_.push_back({ .ip = L"0.0.0.0", .type = FileInternals::Line::Type::IPV4 });
+		ListView_SetItemState(hwnd_, -1, 0, LVIS_SELECTED);
 
 		if (entry_is_filtered(line_data_.back().type))
 			Message::display(Message::Type::Info, Localization::Text::Info_NewEntryAddedWithFilters);
 		else
 			insert_internal_entry(line_data_.size(), line_data_.back());
 
-		PostMessageW(GetParent(hwnd_), (UINT)WmId::Custom::ListMutated, 0, 0);
+		const int idx{ ListView_GetItemCount(hwnd_) };
+		ListView_SetItemState(hwnd_, idx - 1, LVIS_SELECTED, LVIS_SELECTED);
+		ListView_EnsureVisible(hwnd_, idx - 1, FALSE);
+
+		PostMessageW(GetParent(hwnd_), static_cast<UINT>(WmId::Custom::ListMutated), 0, 0);
 	}
 
 	LRESULT CALLBACK ListView::edit_sub_class_procc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam, 
@@ -517,7 +522,7 @@ namespace List {
 				break;
 			}
 			case WM_KILLFOCUS: {
-				DestroyWindow(hwnd); // the only way to commit is by pressing enter...
+				PostMessageW(hwnd, static_cast<UINT>(WM_KEYDOWN), VK_RETURN, 0);
 				break;
 			}
 			case WM_DESTROY: {

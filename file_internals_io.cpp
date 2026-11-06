@@ -46,7 +46,7 @@ FileInternals::ReturnType<FileInternals::Line::Data> parse_line(const std::wstri
 			[](auto&& range) {
 				return range
 					| std::views::drop(1)
-					| std::views::join_with(' ')
+					| std::views::join_with(L' ')
 					| std::ranges::to<std::wstring>();
 			}
 		};
@@ -71,7 +71,7 @@ FileInternals::ReturnType<FileInternals::Line::Data> parse_line(const std::wstri
 FileInternals::ReturnType<std::filesystem::path> to_temp(std::filesystem::path original, const std::vector<FileInternals::Line::Data>& data) {
 
 	auto temp{ original };
-	temp.replace_extension(".tmp");
+	temp.replace_extension(L".tmp");
 
 	std::wofstream temp_file { temp };
 
@@ -85,7 +85,7 @@ FileInternals::ReturnType<std::filesystem::path> to_temp(std::filesystem::path o
 	};
 
 	for (const auto& line : vw) {
-		temp_file << std::format(L"{} {}", line.ip, line.domains) << '\n';
+		temp_file << std::format(L"{} {}", line.ip, line.domains) << L'\n';
 
 		if (!temp_file) {
 			std::filesystem::remove(temp);
@@ -154,7 +154,6 @@ namespace FileInternals {
 
 		std::error_code ec{ };
 		std::filesystem::rename(temp.value(), hosts, ec);
-
 
 		if (ec) {
 			std::filesystem::remove(temp.value());

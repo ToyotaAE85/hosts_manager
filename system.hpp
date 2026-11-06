@@ -46,7 +46,7 @@ namespace System {
 		void handle_internal_error(T data) {
 			auto [type, err] { data };
 
-			[[maybe_unused]] int res{ 
+			[[maybe_unused]] int res { 
 				Message::display(type, Localization::TextMap<decltype(err)>{}.map(err)) 
 			};
 

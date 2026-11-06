@@ -65,15 +65,15 @@ namespace Menu {
 
 
 		HMENU hSettings{ CreatePopupMenu() };
-		AppendToMenu(hSettings, MF_POPUP, (UINT_PTR)setText, Localization::Text::Settings_Text);
-		AppendToMenu(hSettings, MF_POPUP, (UINT_PTR)setLang, Localization::Text::Settings_Language);
+		AppendToMenu(hSettings, MF_POPUP, reinterpret_cast<UINT_PTR>(setText), Localization::Text::Settings_Text);
+		AppendToMenu(hSettings, MF_POPUP, reinterpret_cast<UINT_PTR>(setLang), Localization::Text::Settings_Language);
 		AppendToMenu(hSettings, MF_SEPARATOR, 0);
-		AppendToMenu(hSettings, MF_POPUP, (UINT_PTR)setFilter, Localization::Text::Settings_FilterEntries);
+		AppendToMenu(hSettings, MF_POPUP, reinterpret_cast<UINT_PTR>(setFilter), Localization::Text::Settings_FilterEntries);
 		AppendToMenu(hSettings, MF_STRING, WmId::MenuBar::Settings_ReloadFile, Localization::Text::Settings_ReloadFile);
 
 
-		AppendToMenu(hMenu, MF_POPUP, (UINT_PTR)hFile, Localization::Text::Menu_File);
-		AppendToMenu(hMenu, MF_POPUP, (UINT_PTR)hSettings, Localization::Text::Menu_Settings);
+		AppendToMenu(hMenu, MF_POPUP, reinterpret_cast<UINT_PTR>(hFile), Localization::Text::Menu_File);
+		AppendToMenu(hMenu, MF_POPUP, reinterpret_cast<UINT_PTR>(hSettings), Localization::Text::Menu_Settings);
 
 		update_labels(hMenu);
 
@@ -148,14 +148,14 @@ namespace Menu {
 			case WmId::MenuBar::Language_English: {
 
 				if (language != Language::Type::English)
-					PostMessageW(parent_, (UINT)WmId::Custom::Request_Language_Change, (WPARAM)wmId, 0);
+					PostMessageW(parent_, static_cast<UINT>(WmId::Custom::Request_Language_Change), static_cast<WPARAM>(wmId), 0);
 
 				return 0;
 			}
 			case WmId::MenuBar::Language_Spanish: {
 
 				if (language != Language::Type::Spanish)
-					PostMessageW(parent_, (UINT)WmId::Custom::Request_Language_Change, (WPARAM)wmId, 0);
+					PostMessageW(parent_, static_cast<UINT>(WmId::Custom::Request_Language_Change), static_cast<WPARAM>(wmId), 0);
 
 				return 0;
 			}
@@ -163,16 +163,16 @@ namespace Menu {
 			case WmId::MenuBar::Filter_Blank:		[[fallthrough]];
 			case WmId::MenuBar::Filter_Comments:	[[fallthrough]];
 			case WmId::MenuBar::Filter_All: {
-				PostMessageW(parent_, (UINT)WmId::Custom::Request_Filter_Change, (WPARAM)wmId, 0);
+				PostMessageW(parent_, static_cast<UINT>(WmId::Custom::Request_Filter_Change), static_cast<WPARAM>(wmId), 0);
 				return 0;
 			}
 			case WmId::MenuBar::Settings_ReloadFile: {
-				PostMessageW(parent_, (UINT)WmId::Custom::Request_List_Reload, 0, 0);
+				PostMessageW(parent_, static_cast<UINT>(WmId::Custom::Request_List_Reload), 0, 0);
 				return 0;
 			}
 			case WmId::MenuBar::Text_IncreaseSize:	[[fallthrough]];
 			case WmId::MenuBar::Text_DecreaseSize: {
-				PostMessageW(parent_, (UINT)WmId::Custom::Request_TextSize_Change, (WPARAM)wmId, 0);
+				PostMessageW(parent_, static_cast<UINT>(WmId::Custom::Request_TextSize_Change), static_cast<WPARAM>(wmId), 0);
 				return 0;
 			}
 			case WmId::MenuBar::File_Exit: {
@@ -181,15 +181,15 @@ namespace Menu {
 			}
 
 			case WmId::MenuBar::File_EmptyFile: {
-				PostMessageW(parent_, (UINT)WmId::Custom::Request_Clear_File, 0, 0);
+				PostMessageW(parent_, static_cast<UINT>(WmId::Custom::Request_Clear_File), 0, 0);
 				return 0;
 			}
 			case WmId::MenuBar::File_BackupFile: {
-				PostMessageW(parent_, (UINT)WmId::Custom::Request_Backup_File, 0, 0);
+				PostMessageW(parent_, static_cast<UINT>(WmId::Custom::Request_Backup_File), 0, 0);
 				return 0;
 			}
 			case WmId::MenuBar::File_RestoreFile: {
-				PostMessageW(parent_, (UINT)WmId::Custom::Request_Restore_File, 0, 0);
+				PostMessageW(parent_, static_cast<UINT>(WmId::Custom::Request_Restore_File), 0, 0);
 				return 0;
 			}
 			default:
