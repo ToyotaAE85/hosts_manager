@@ -54,6 +54,8 @@ namespace List {
 			bool is_commit_active{ false };
 		};
 
+		edit_state* active_edit_{ nullptr };
+
 	public:
 
 		HWND hwnd() const;
@@ -105,11 +107,13 @@ namespace List {
 
 		void delete_selected_entry();
 
+	private:
+
 		void update_entry(const edit_state& data, std::wstring_view str);
 
 		void calculate_edit_control(edit_state& state);
 
-	private:
+		std::int32_t cell_to_vector_index(std::int32_t idx) const;
 
 		void rewrite_data();
 
@@ -118,8 +122,6 @@ namespace List {
 		void resize_fallback(Screen::Data screen);
 
 		auto retrieve_filtered_view() const;
-
-		std::int32_t cell_to_vector_index(std::int32_t idx) const;
 
 		void enable_edit_controls(std::int32_t iitem, std::int32_t isitem);
 

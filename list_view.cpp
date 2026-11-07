@@ -132,12 +132,14 @@ namespace List {
 				});
 		}
 		else {
-			MoveWindow(edit_,
+			SetWindowPos(
+				edit_,
+				nullptr,
 				sl_rect.left,
 				sl_rect.top,
 				sl_rect.right - sl_rect.left,
 				sl_rect.bottom - sl_rect.top,
-				TRUE
+				SWP_NOZORDER | SWP_NOACTIVATE
 			);
 		}
 
@@ -153,6 +155,8 @@ namespace List {
 	void ListView::enable_edit_controls(std::int32_t iitem, std::int32_t isitem) {
 
 		edit_state* obj{ new edit_state };
+
+		active_edit_ = obj;
 		auto& [instance, itm, sitm, entryidx, _] { *obj };
 
 		instance = this;
@@ -162,15 +166,17 @@ namespace List {
 		entryidx = cell_to_vector_index(itm);
 
 		if (entryidx < 0) {
+			active_edit_ = nullptr;
 			delete obj;
 			return;
 		}
 
 		calculate_edit_control(*obj);
 
-		if (!SetWindowSubclass(edit_, ListView::edit_sub_class_procc, 0, reinterpret_cast<DWORD_PTR>(obj)))
+		if (!SetWindowSubclass(edit_, ListView::edit_sub_class_procc, 0, reinterpret_cast<DWORD_PTR>(obj))) {
+			active_edit_ = nullptr;
 			delete obj;
-		
+		}
 	}
 
 	ListView& ListView::populate_rows(List::PopulateRows from) {
@@ -273,7 +279,10 @@ namespace List {
 
 			Win32Utility::apply_font(font);
 		}
-		
+
+		if (edit_ && active_edit_)
+			calculate_edit_control(*active_edit_);
+
 		return *this;
 	}
 
@@ -288,7 +297,6 @@ namespace List {
 		target = ListView_GetHeader(hwnd_);
 		data.font_weight = 700;
 		font_data_.push_back(ctrl);
-
 	}
 
 	void ListView::rewrite_data() {
@@ -415,6 +423,9 @@ namespace List {
 			EndDeferWindowPos(hDwp);
 		else
 			resize_fallback(screen);
+
+		if (edit_ && active_edit_)
+			calculate_edit_control(*active_edit_);
 	}
 
 	void ListView::resize_fallback(Screen::Data screen) {
@@ -526,7 +537,7 @@ namespace List {
 		auto commit_changes{
 			[&] {
 				
-				if (obj && obj->instance_ && obj->is_commit_active)
+				if (!obj || !obj->instance_ || obj->is_commit_active)
 					return;
 				
 				obj->is_commit_active = true;
@@ -552,7 +563,7 @@ namespace List {
 
 				using enum List::EditControlPress;
 
-				if (!obj || obj->instance_)
+				if (!obj || !obj->instance_)
 					return;
 
 				auto& [instance, item, sbitem, idx, _] { *obj };
@@ -565,9 +576,11 @@ namespace List {
 						0, ListView_GetItemCount(instance->hwnd()) - 1);
 				}
 
-				idx = item;
-			
-				instance->calculate_edit_control(*obj);
+				idx = obj->instance_->cell_to_vector_index(item);
+
+				ListView_EnsureVisible(instance->hwnd(), item, FALSE);
+
+				instance->calculate_edit_control(*obj);	
 			}
 		};
 
@@ -613,9 +626,6 @@ namespace List {
 				break;
 			}
 			case WM_KILLFOCUS: {
-				if (obj && !obj->is_commit_active)
-					commit_changes();
-
 				DestroyWindow(hwnd);
 				break;
 			}
@@ -631,6 +641,8 @@ namespace List {
 					ListView_SetItemState(lv, obj->item_, LVIS_SELECTED | LVIS_FOCUSED, 
 						LVIS_SELECTED | LVIS_FOCUSED);
 					ListView_EnsureVisible(lv, obj->item_, FALSE);
+
+					obj->instance_->active_edit_ = nullptr;
 
 					delete obj;
 				}
