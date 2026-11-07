@@ -577,9 +577,6 @@ namespace List {
 				}
 
 				idx = obj->instance_->cell_to_vector_index(item);
-
-				ListView_EnsureVisible(instance->hwnd(), item, FALSE);
-
 				instance->calculate_edit_control(*obj);	
 			}
 		};

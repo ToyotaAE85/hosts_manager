@@ -410,11 +410,11 @@ namespace System {
 				PostQuitMessage(0);
 				return 0;
 			}
-			case WM_ACTIVATEAPP: {
-				if (wParam == FALSE)
-					PostQuitMessage(0);
-				break;
-			}
+			//case WM_ACTIVATEAPP: { // DEBUG ONLY, DO NOT RELEASE THIS!!!!!!!!
+			//	if (wParam == FALSE)
+			//		PostQuitMessage(0);
+			//	break;
+			//}
 			case WM_KEYDOWN: {
 				if (GetAsyncKeyState(VK_CONTROL) & 0x8000) {
 					if (wParam == 'S' && inner_settings_.changes_performed == true)
