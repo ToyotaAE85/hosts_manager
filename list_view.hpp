@@ -23,9 +23,9 @@ namespace List {
 	};
 
 	enum class EditControlPress {
-		UpArrow,
-		DownArrow,
-		Tab,
+		UpArrow		= -1,
+		DownArrow	= 1,
+		Tab			= 2,
 	};
 
 	struct ColumnData {
@@ -51,6 +51,7 @@ namespace List {
 			std::int32_t item_{ -1 };
 			std::int32_t sbitem_{ -1 };
 			std::int32_t entry_idx_{ -1 };
+			bool is_commit_active{ false };
 		};
 
 	public:
@@ -128,6 +129,5 @@ namespace List {
 
 		static LRESULT CALLBACK edit_sub_class_procc(HWND hwnd, UINT msg, 
 			WPARAM wParam, LPARAM lParam, UINT_PTR uIdSubclass, DWORD_PTR dwRefData);
-
 	};
 }

@@ -26,14 +26,13 @@ FileInternals::Line::Type validate_ip(std::wstring_view input) {
 
 FileInternals::ReturnType<FileInternals::Line::Data> parse_line(const std::wstring& input) {
 
-	// do we really need to materialize them...
 	const auto tokens{
 		input
 		| std::views::split(L' ')
 		| std::ranges::to<std::vector<std::wstring>>()
 	};
 
-	FileInternals::Line::Data line{ };
+	FileInternals::Line::Data line{ .domains = L"", .ip = L"" };
 
 	if (std::ranges::all_of(tokens | std::views::join, [](wchar_t c) { return std::iswspace(c); })) {
 		line.type = FileInternals::Line::Type::BLANK;
@@ -42,26 +41,19 @@ FileInternals::ReturnType<FileInternals::Line::Data> parse_line(const std::wstri
 
 		const auto& ip_token{ tokens[0] };
 		
-		auto rvw{
-			[](auto&& range) {
-				return range
-					| std::views::drop(1)
-					| std::views::join_with(L' ')
-					| std::ranges::to<std::wstring>();
-			}
-		};
-
 		line.ip = tokens[0];
 		
-		if (ip_token.starts_with(L'#')) {
+		if (line.ip.starts_with(L'#')) {
 			line.type = FileInternals::Line::Type::COMMENT;
-			line.domains = rvw(tokens);
 		}
 		else {
 			line.type = validate_ip(ip_token);
-			line.domains = rvw(tokens);
 		}
 
+		line.domains = tokens
+			| std::views::drop(1)
+			| std::views::join_with(' ')
+			| std::ranges::to<std::wstring>();
 	}
 
 	return line;

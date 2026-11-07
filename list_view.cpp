@@ -8,6 +8,7 @@
 #include <algorithm>
 #include <string>
 
+#include <cassert>
 #include <memory>
 
 //i just noticed theres a 260 char limit... dang it..
@@ -103,7 +104,7 @@ namespace List {
 
 	void ListView::calculate_edit_control(edit_state& state) {
 
-		auto& [_, itm, sitm, entryidx] { state };
+		auto& [_, itm, sitm, entryidx, __] { state };
 
 		RECT sl_rect{ };
 		ListView_GetSubItemRect(hwnd_, itm, sitm, LVIR_BOUNDS, &sl_rect);
@@ -152,7 +153,7 @@ namespace List {
 	void ListView::enable_edit_controls(std::int32_t iitem, std::int32_t isitem) {
 
 		edit_state* obj{ new edit_state };
-		auto& [instance, itm, sitm, entryidx] { *obj };
+		auto& [instance, itm, sitm, entryidx, _] { *obj };
 
 		instance = this;
 		itm = iitem;
@@ -195,10 +196,6 @@ namespace List {
 		LPNMHDR lpmsg{ reinterpret_cast<LPNMHDR>(lParam) };
 
 		switch (lpmsg->code) {
-			
-			case NM_CUSTOMDRAW: {
-				break; //bruh
-			}
 			case NM_DBLCLK: {
 				LPNMITEMACTIVATE item{ reinterpret_cast<LPNMITEMACTIVATE>(lParam) };
 
@@ -259,7 +256,7 @@ namespace List {
 				break;
 			}
 			case NM_KILLFOCUS: {
-				ListView_SetItemState(hwnd_, -1, 0, LVIS_SELECTED);
+				ListView_SetItemState(hwnd_, -1, 0, LVIS_SELECTED | LVIS_FOCUSED);
 				break;
 			}
 		}
@@ -342,12 +339,15 @@ namespace List {
 
 	void ListView::update_entry(const edit_state& data, std::wstring_view str) {
 		
-		const auto& [lv, lvidx, lvsidx, vcidx] { data };
+		const auto& [lv, lvidx, lvsidx, vcidx, _] { data };
 
 		if (static_cast<std::size_t>(vcidx) >= line_data_.size()) 
 			return;
 
 		auto& [domains, ip, type] { line_data_[vcidx] };
+
+		std::wstring temp_dom{ domains };
+		std::wstring temp_ip{ ip };
 
 		if (lvsidx == 3) {
 
@@ -355,30 +355,32 @@ namespace List {
 				return;
 
 			domains.assign(str);
-			ListView_SetItemText(hwnd_, lvidx, 3, line_data_[vcidx].domains.data());
 		}
 		else if (lvsidx == 1) {
 
 			if (ip == str)
 				return;
 
-			std::wstring temp{ ip };
 			ip.assign(str);
-			
-			auto res{ FileInternals::revalidate_line_data(line_data_[vcidx]) };
-			
-			if (!res) {
-				ip = temp;
-				Message::display(Message::Type::Warning, Localization::Text::Warning_LineRevalidationFailed);
-				return;
-			}
 
-			line_data_[vcidx] = res.value();
-
-			ListView_SetItemText(hwnd_, lvidx, 1, ip.data());
-			ListView_SetItemText(hwnd_, lvidx, 2, const_cast<LPWSTR>(Localization::get_text(type).data()));
-			ListView_SetItemText(hwnd_, lvidx, 3, domains.data());
 		}
+		else [[unlikely]]
+			return;
+
+		auto res{ FileInternals::revalidate_line_data(line_data_[vcidx]) };
+
+		if (!res) {
+			ip = temp_ip;
+			domains = temp_dom;
+			Message::display(Message::Type::Warning, Localization::Text::Warning_LineRevalidationFailed);
+			return;
+		}
+
+		line_data_[vcidx] = res.value();
+
+		ListView_SetItemText(hwnd_, lvidx, 1, ip.data());
+		ListView_SetItemText(hwnd_, lvidx, 2, const_cast<LPWSTR>(Localization::get_text(type).data()));
+		ListView_SetItemText(hwnd_, lvidx, 3, domains.data());
 
 		if (entry_is_filtered(type))
 			ListView_DeleteItem(hwnd_, lvidx);
@@ -392,7 +394,7 @@ namespace List {
 
 	void ListView::resize(Screen::Data screen) {
 		using namespace Screen;
-
+			
 		HDWP hDwp{ BeginDeferWindowPos(1) };
 
 		if (!hDwp) {
@@ -523,6 +525,12 @@ namespace List {
 
 		auto commit_changes{
 			[&] {
+				
+				if (obj && obj->instance_ && obj->is_commit_active)
+					return;
+				
+				obj->is_commit_active = true;
+
 				const int buffer_size = GetWindowTextLengthW(hwnd);
 				std::wstring buffer;
 
@@ -534,6 +542,8 @@ namespace List {
 				}
 
 				obj->instance_->update_entry(*obj, buffer);
+
+				obj->is_commit_active = false;
 			}
 		};
 
@@ -542,20 +552,21 @@ namespace List {
 
 				using enum List::EditControlPress;
 
-				auto& [instance, item, sbitem, idx] { *obj };
+				if (!obj || obj->instance_)
+					return;
+
+				auto& [instance, item, sbitem, idx, _] { *obj };
 
 				if (dir == Tab) {
 					sbitem ^= 2;
 				}
-				else if (dir == UpArrow) {
-					item = std::clamp(item - 1, 0, ListView_GetItemCount(instance->hwnd()) - 1);
-				}
-				else if (dir == DownArrow) {
-					item = std::clamp(item+ 1, 0, ListView_GetItemCount(instance->hwnd()) - 1);
+				else if (dir == UpArrow || dir == DownArrow) {
+					item = std::clamp(item + static_cast<int>(dir), 
+						0, ListView_GetItemCount(instance->hwnd()) - 1);
 				}
 
 				idx = item;
-				
+			
 				instance->calculate_edit_control(*obj);
 			}
 		};
@@ -569,11 +580,11 @@ namespace List {
 				break;
 			}
 			case WM_KEYDOWN: {
-
+					
 				if (wParam == VK_RETURN) {
 					commit_changes();
 
-					DestroyWindow(hwnd);
+					SetFocus(GetParent(hwnd));
 					return 0;
 				}
 				else if (wParam == VK_ESCAPE) {
@@ -602,7 +613,9 @@ namespace List {
 				break;
 			}
 			case WM_KILLFOCUS: {
-				commit_changes();
+				if (obj && !obj->is_commit_active)
+					commit_changes();
+
 				DestroyWindow(hwnd);
 				break;
 			}
