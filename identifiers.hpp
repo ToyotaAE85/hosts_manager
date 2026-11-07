@@ -1,7 +1,7 @@
 #pragma once
 
 // Both MIN and MAX indices should not
-// be used
+// be used for any events
 
 namespace WmId {
 
@@ -69,6 +69,7 @@ namespace WmId {
 		
 		ListMutated,
 		ListSelected,
+		ListError,
 
 		Max = 0xBFFF
 	};

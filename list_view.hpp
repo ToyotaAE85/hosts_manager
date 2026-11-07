@@ -67,7 +67,7 @@ namespace List {
 
 			ListView_InsertColumn(hwnd_, 0, &lvc);
 
-			int col_counter{ 1 };
+			std::int32_t col_counter{ 1 };
 
 			((
 				lvc.fmt = args.fmt,
@@ -117,6 +117,8 @@ namespace List {
 		auto retrieve_filtered_view() const;
 
 		std::int32_t cell_to_vector_index(std::int32_t idx) const;
+
+		void enable_edit_controls(std::int32_t iitem, std::int32_t isitem);
 
 		bool entry_is_filtered(FileInternals::Line::Type type);
 

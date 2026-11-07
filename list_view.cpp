@@ -101,6 +101,58 @@ namespace List {
 		return idx - 1;
 	}
 
+	void ListView::enable_edit_controls(std::int32_t iitem, std::int32_t isitem) {
+
+		edit_state* obj{ new edit_state };
+		auto& [instance, itm, sitm, entryidx, field] { *obj };
+
+		instance = this;
+		itm = iitem;
+		sitm = isitem;
+		field = sitm == 1 ? UpdateField::IpAddress : UpdateField::Domains;
+
+		RECT sl_rect{ };
+		ListView_GetSubItemRect(hwnd_, itm, sitm, LVIR_BOUNDS, &sl_rect);
+
+		entryidx = cell_to_vector_index(itm);
+
+		if (entryidx < 0) {
+			delete obj;
+			return;
+		}
+
+		std::wstring buffer{  };
+
+		if (field == UpdateField::IpAddress)
+			buffer = line_data_[entryidx].ip;
+		else
+			buffer = line_data_[entryidx].domains;
+
+		edit_ = Win32Utility::create_window({
+			.exStyle = WS_EX_CLIENTEDGE,
+			.className = L"EDIT",
+			.windowName = buffer.data(),
+			.style = WS_CHILD | WS_VISIBLE | ES_LEFT | ES_AUTOHSCROLL,
+			.x = sl_rect.left,
+			.y = sl_rect.top,
+			.width = sl_rect.right - sl_rect.left,
+			.height = sl_rect.bottom - sl_rect.top,
+			.hParent = hwnd_,
+			.id = static_cast<std::uint64_t>(WmId::ListView::DynamicEdit),
+			.hInst = GetModuleHandleW(NULL),
+			});
+
+		HFONT hFont{ reinterpret_cast<HFONT>(SendMessageW(hwnd_, WM_GETFONT, 0, 0)) };
+		SendMessageW(edit_, WM_SETFONT, reinterpret_cast<WPARAM>(hFont), TRUE);
+
+		SendMessageW(edit_, EM_SETSEL, 0, -1);
+		SetFocus(edit_);
+
+		if (!SetWindowSubclass(edit_, ListView::edit_sub_class_procc, 0, reinterpret_cast<DWORD_PTR>(obj)))
+			delete obj;
+		
+	}
+
 	ListView& ListView::populate_rows(List::PopulateRows from) {
 
 		if (from == List::PopulateRows::FromFile)
@@ -128,64 +180,16 @@ namespace List {
 			case NM_CUSTOMDRAW: {
 				break; //bruh
 			}
-			// this is doing WAAAY TOO MUCH, leave it for now lmao
 			case NM_DBLCLK: {
 				LPNMITEMACTIVATE item{ reinterpret_cast<LPNMITEMACTIVATE>(lParam) };
 
 				if (item->iItem != -1 && (item->iSubItem == 1 || item->iSubItem == 3)) {
-
-					edit_state* obj{ new edit_state };
-					auto& [instance, itm, sitm, entryidx, field] { *obj };
-					
-					instance = this;
-					itm = item->iItem;
-					sitm = item->iSubItem;
-					field = item->iSubItem == 1 ? UpdateField::IpAddress : UpdateField::Domains;
-
-					RECT sl_rect{ };
-					ListView_GetSubItemRect(hwnd_, itm, sitm, LVIR_BOUNDS, &sl_rect);
-
-					entryidx = cell_to_vector_index(itm);
-
-					if (entryidx < 0) {
-						delete obj;
-						return 1;
-					}
-
-					std::wstring buffer{  };
-
-					if (field == UpdateField::IpAddress) 
-						buffer = line_data_[entryidx].ip;
-					else 
-						buffer = line_data_[entryidx].domains;
-					
-					edit_ = Win32Utility::create_window({
-						.exStyle = WS_EX_CLIENTEDGE,
-						.className = L"EDIT",
-						.windowName = buffer.data(),
-						.style = WS_CHILD | WS_VISIBLE | ES_LEFT | ES_AUTOHSCROLL,
-						.x = sl_rect.left,
-						.y = sl_rect.top,
-						.width = sl_rect.right - sl_rect.left,
-						.height = sl_rect.bottom - sl_rect.top,
-						.hParent = hwnd_,
-						.id = (std::uint64_t)WmId::ListView::DynamicEdit,
-						.hInst = GetModuleHandleW(NULL),
-					});
-
-					HFONT hFont{ reinterpret_cast<HFONT>(SendMessageW(hwnd_, WM_GETFONT, 0, 0)) };
-					SendMessageW(edit_, WM_SETFONT, reinterpret_cast<WPARAM>(hFont), TRUE);
-
-					SendMessageW(edit_, EM_SETSEL, 0, -1);
-					SetFocus(edit_);
-						
-					if (!SetWindowSubclass(edit_, ListView::edit_sub_class_procc, 0, reinterpret_cast<DWORD_PTR>(obj))) {
-						delete obj;
-					}
+					enable_edit_controls(item->iItem, item->iSubItem);
 				}
 				else if (item->iItem == -1) { // a bit odd that this would insert an entry...
 					insert_new_entry();
 				}
+
 				break;
 			}
 			case LVN_ITEMCHANGED: {
@@ -215,22 +219,28 @@ namespace List {
 					delete_selected_entry();
 				}
 				else if (key->wVKey == VK_ESCAPE) {
-					ListView_SetItemState(hwnd_, -1, 0, LVIS_SELECTED);
 					SetFocus(GetParent(hwnd_));
 				}
-				else if (GetAsyncKeyState(VK_CONTROL) & 0x8000) {
-					switch (key->wVKey) {
-						case 'N': {
-							insert_new_entry();
-							break;
-						}
-						case 'X': {
-							delete_selected_entry();
-							break;
-						}
+				else if (key->wVKey == VK_RETURN) {
+					if (ListView_GetSelectedCount(hwnd_) == 1) {
+
+						const std::int32_t item{ ListView_GetNextItem(hwnd_, -1, LVNI_SELECTED) };
+
+						if (item != -1)
+							enable_edit_controls(item, 3);
+
 					}
-					
 				}
+				else if (GetAsyncKeyState(VK_CONTROL) & 0x8000) {
+					if (key->wVKey == 'X') 
+						delete_selected_entry();
+					else if (key->wVKey == 'N')
+						insert_new_entry();	
+				}
+				break;
+			}
+			case NM_KILLFOCUS: {
+				ListView_SetItemState(hwnd_, -1, 0, LVIS_SELECTED);
 				break;
 			}
 		}
@@ -270,10 +280,8 @@ namespace List {
 		auto data{ FileInternals::load_data(FileInternals::from_target_file()) };
 
 		if (!data) {
-			// istg if i have to write another comment here ill lose it frfr
-			// WHY HAVENT WE DEALT WIT THIS YET?
-			// we should def deal wt this, later tho lmao
-			// Deal with the error later
+			SendMessageW(GetParent(hwnd_), static_cast<UINT>(WmId::Custom::ListError), 
+				static_cast<WPARAM>(data.error().type), static_cast<LPARAM>(data.error().err));
 			return;
 		}
 
@@ -432,7 +440,6 @@ namespace List {
 	}
 
 	bool ListView::entry_is_filtered(FileInternals::Line::Type type) {
-
 		switch (type) {
 			case FileInternals::Line::Type::INVALID:	return filter_modes_ & 1;
 			case FileInternals::Line::Type::BLANK:		return filter_modes_ & (1 << 1);
@@ -479,7 +486,8 @@ namespace List {
 		else
 			insert_internal_entry(line_data_.size(), line_data_.back());
 
-		const int idx{ ListView_GetItemCount(hwnd_) };
+		const std::int32_t idx{ ListView_GetItemCount(hwnd_) };
+
 		ListView_SetItemState(hwnd_, idx - 1, LVIS_SELECTED, LVIS_SELECTED);
 		ListView_EnsureVisible(hwnd_, idx - 1, FALSE);
 
@@ -530,7 +538,13 @@ namespace List {
 				RemoveWindowSubclass(hwnd, ListView::edit_sub_class_procc, 0);
 
 				if (obj && obj->instance_) {
+					const HWND lv{ obj->instance_->hwnd() };
+
 					obj->instance_->edit_ = NULL;
+
+					SetFocus(lv);
+					ListView_SetItemState(lv, obj->item_, LVIS_SELECTED, LVIS_SELECTED);
+
 					delete obj;
 				}
 

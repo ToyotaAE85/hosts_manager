@@ -9,7 +9,9 @@
 
 namespace System {
 	
-	MainWindow::MainWindow(HINSTANCE hInst) noexcept : hInstance_{ hInst } {}
+	MainWindow::MainWindow(HINSTANCE hInst) noexcept 
+		: hInstance_{ hInst }, screenData_{}, inner_settings_{}, 
+		listView_{}, menuBar_{}, buttons_{} { }
 
 	HWND MainWindow::hwnd() const { return hwnd_; }
 
@@ -175,6 +177,15 @@ namespace System {
 		}
 
 		return;
+	}
+
+	void MainWindow::handle_internal_error(const FileInternals::ErrorData& error) {
+
+		auto [type, err] { error };
+
+		[[maybe_unused]] int res{
+			Message::display(type, Localization::TextMap<decltype(err)>{}.map(err))
+		};
 	}
 
 	void MainWindow::flush_dns() {
@@ -357,7 +368,6 @@ namespace System {
 
 				WmId::Control cId{ static_cast<WmId::Control>(wId) };
 
-
 				if (cId == WmId::Control::ApplyFilter) {
 					flush_dns();
 				} 
@@ -376,9 +386,7 @@ namespace System {
 				}
 
 				if (cId != WmId::Control::NewEntry) {
-					ListView_SetItemState(listView_.hwnd(), -1, 0, LVIS_SELECTED);
 					EnableWindow(buttons_.delete_, FALSE);
-
 					SetFocus(hwnd_);
 				}
 
@@ -402,6 +410,17 @@ namespace System {
 						save_data();
 					else if (wParam == 'R')
 						handle_file_reload();
+				} 
+				else if (wParam == VK_DOWN || wParam == VK_UP) {
+					const HWND lv{ listView_.hwnd() };
+
+					ListView_SetItemState(lv, 0, 
+						LVIS_SELECTED | LVIS_FOCUSED, LVIS_SELECTED | LVIS_FOCUSED);
+
+					ListView_EnsureVisible(lv, 0, FALSE);
+
+					SetFocus(lv);
+					return 0;
 				}
 				break;
 			}
@@ -470,6 +489,13 @@ namespace System {
 				auto idx{ lParam };
 				EnableWindow(buttons_.delete_, idx != -1);
 
+				return 0;
+			}
+			case static_cast<UINT>(WmId::Custom::ListError): {
+				handle_internal_error(FileInternals::ErrorData{
+					static_cast<Message::Type>(wParam),
+					static_cast<FileInternals::Error>(lParam)
+				});
 				return 0;
 			}
 		}

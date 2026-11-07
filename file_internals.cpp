@@ -8,10 +8,22 @@
 #include <system_error>
 #include <format>
 #include <filesystem>
+#include <chrono>
+
 
 namespace FileInternals {
 
 	std::filesystem::path current_file{ };
+
+	std::wstring timestamp() {
+		const auto now{ std::chrono::system_clock::now() };
+		const auto local{ std::chrono::current_zone()->to_local(now) };
+
+		return std::format(
+			L"{:%Y-%m-%d_%H-%M-%S}",
+			std::chrono::floor<std::chrono::seconds>(local)
+		);
+	}
 
 	ReturnType<void> validate_hosts() {
 		if (!std::filesystem::exists(hosts))
@@ -94,7 +106,7 @@ namespace FileInternals {
 
 		std::error_code ec{ };
 		std::filesystem::copy_file(hosts, backup_dir.value() 
-			/ std::format(L"hosts{}.bak", Time::stamp()), ec);
+			/ std::format(L"hosts{}.bak", timestamp()), ec);
 
 		if (ec)
 			return std::unexpected(ErrorData{ Message::Type::Warning, Error::HOSTS_FILE_COPY_FAILED });

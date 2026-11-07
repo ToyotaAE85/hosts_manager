@@ -24,14 +24,14 @@ namespace System {
 	class MainWindow final : WndBase::WindowBase {
 
 		
-		HINSTANCE hInstance_{ };
+		HINSTANCE hInstance_;
 		
-		Screen::Data screenData_{ };
-		Settings inner_settings_{ };
+		Screen::Data screenData_;
+		Settings inner_settings_;
 
-		List::ListView listView_{ };
-		Menu::MenuBar menuBar_{ };
-		ActionsMenu::Buttons buttons_{ };
+		List::ListView listView_;
+		Menu::MenuBar menuBar_;
+		ActionsMenu::Buttons buttons_;
 
 	public:
 
@@ -39,21 +39,11 @@ namespace System {
 
 		HWND hwnd() const;
 
-		void initialize(int);
+		void initialize(int nCmdShow);
 		
 	private:
 
-		//hmmm, not sure about this one.
-		template<typename T>
-		void handle_internal_error(T data) {
-			auto [type, err] { data };
-
-			[[maybe_unused]] int res { 
-				Message::display(type, Localization::TextMap<decltype(err)>{}.map(err)) 
-			};
-
-			return;
-		}
+		void handle_internal_error(const FileInternals::ErrorData& err);
 
 		void prepare_ui();
 
