@@ -101,18 +101,62 @@ namespace List {
 		return idx - 1;
 	}
 
+	void ListView::calculate_edit_control(edit_state& state) {
+
+		auto& [_, itm, sitm, entryidx] { state };
+
+		RECT sl_rect{ };
+		ListView_GetSubItemRect(hwnd_, itm, sitm, LVIR_BOUNDS, &sl_rect);
+
+		std::wstring buffer{  };
+
+		if (sitm == 1)
+			buffer = line_data_[entryidx].ip;
+		else
+			buffer = line_data_[entryidx].domains;
+
+		if (!edit_) {
+			edit_ = Win32Utility::create_window({
+				.exStyle = WS_EX_CLIENTEDGE,
+				.className = L"EDIT",
+				.windowName = L"",
+				.style = WS_CHILD | WS_VISIBLE | ES_LEFT | ES_AUTOHSCROLL,
+				.x = sl_rect.left,
+				.y = sl_rect.top,
+				.width = sl_rect.right - sl_rect.left,
+				.height = sl_rect.bottom - sl_rect.top,
+				.hParent = hwnd_,
+				.id = static_cast<std::uint64_t>(WmId::ListView::DynamicEdit),
+				.hInst = GetModuleHandleW(NULL),
+				});
+		}
+		else {
+			MoveWindow(edit_,
+				sl_rect.left,
+				sl_rect.top,
+				sl_rect.right - sl_rect.left,
+				sl_rect.bottom - sl_rect.top,
+				TRUE
+			);
+		}
+
+		SetWindowTextW(edit_, buffer.data());
+
+		HFONT hFont{ reinterpret_cast<HFONT>(SendMessageW(hwnd_, WM_GETFONT, 0, 0)) };
+		SendMessageW(edit_, WM_SETFONT, reinterpret_cast<WPARAM>(hFont), TRUE);
+
+		SendMessageW(edit_, EM_SETSEL, 0, -1);
+		SetFocus(edit_);
+	}
+
 	void ListView::enable_edit_controls(std::int32_t iitem, std::int32_t isitem) {
 
 		edit_state* obj{ new edit_state };
-		auto& [instance, itm, sitm, entryidx, field] { *obj };
+		auto& [instance, itm, sitm, entryidx] { *obj };
 
 		instance = this;
 		itm = iitem;
 		sitm = isitem;
-		field = sitm == 1 ? UpdateField::IpAddress : UpdateField::Domains;
-
-		RECT sl_rect{ };
-		ListView_GetSubItemRect(hwnd_, itm, sitm, LVIR_BOUNDS, &sl_rect);
 
 		entryidx = cell_to_vector_index(itm);
 
@@ -121,32 +165,7 @@ namespace List {
 			return;
 		}
 
-		std::wstring buffer{  };
-
-		if (field == UpdateField::IpAddress)
-			buffer = line_data_[entryidx].ip;
-		else
-			buffer = line_data_[entryidx].domains;
-
-		edit_ = Win32Utility::create_window({
-			.exStyle = WS_EX_CLIENTEDGE,
-			.className = L"EDIT",
-			.windowName = buffer.data(),
-			.style = WS_CHILD | WS_VISIBLE | ES_LEFT | ES_AUTOHSCROLL,
-			.x = sl_rect.left,
-			.y = sl_rect.top,
-			.width = sl_rect.right - sl_rect.left,
-			.height = sl_rect.bottom - sl_rect.top,
-			.hParent = hwnd_,
-			.id = static_cast<std::uint64_t>(WmId::ListView::DynamicEdit),
-			.hInst = GetModuleHandleW(NULL),
-			});
-
-		HFONT hFont{ reinterpret_cast<HFONT>(SendMessageW(hwnd_, WM_GETFONT, 0, 0)) };
-		SendMessageW(edit_, WM_SETFONT, reinterpret_cast<WPARAM>(hFont), TRUE);
-
-		SendMessageW(edit_, EM_SETSEL, 0, -1);
-		SetFocus(edit_);
+		calculate_edit_control(*obj);
 
 		if (!SetWindowSubclass(edit_, ListView::edit_sub_class_procc, 0, reinterpret_cast<DWORD_PTR>(obj)))
 			delete obj;
@@ -323,14 +342,14 @@ namespace List {
 
 	void ListView::update_entry(const edit_state& data, std::wstring_view str) {
 		
-		const auto& [lv, lvidx, _, vcidx, field] { data };
+		const auto& [lv, lvidx, lvsidx, vcidx] { data };
 
 		if (static_cast<std::size_t>(vcidx) >= line_data_.size()) 
 			return;
 
 		auto& [domains, ip, type] { line_data_[vcidx] };
 
-		if (field == UpdateField::Domains) {
+		if (lvsidx == 3) {
 
 			if (domains == str)
 				return;
@@ -338,7 +357,7 @@ namespace List {
 			domains.assign(str);
 			ListView_SetItemText(hwnd_, lvidx, 3, line_data_[vcidx].domains.data());
 		}
-		else if (field == UpdateField::IpAddress) {
+		else if (lvsidx == 1) {
 
 			if (ip == str)
 				return;
@@ -500,25 +519,60 @@ namespace List {
 		edit_state* obj{ reinterpret_cast<edit_state*>(dwRefData) };
 
 		if (!obj)
-			return 1;
+			DestroyWindow(hwnd);
+
+		auto commit_changes{
+			[&] {
+				const int buffer_size = GetWindowTextLengthW(hwnd);
+				std::wstring buffer;
+
+				if (buffer_size > 0) {
+					buffer.resize(buffer_size + 1);
+
+					GetWindowTextW(hwnd, buffer.data(), buffer_size + 1);
+					buffer.resize(buffer_size);
+				}
+
+				obj->instance_->update_entry(*obj, buffer);
+			}
+		};
+
+		auto modify_control{
+			[&](List::EditControlPress dir) {
+
+				using enum List::EditControlPress;
+
+				auto& [instance, item, sbitem, idx] { *obj };
+
+				if (dir == Tab) {
+					sbitem ^= 2;
+				}
+				else if (dir == UpArrow) {
+					item = std::clamp(item - 1, 0, ListView_GetItemCount(instance->hwnd()) - 1);
+				}
+				else if (dir == DownArrow) {
+					item = std::clamp(item+ 1, 0, ListView_GetItemCount(instance->hwnd()) - 1);
+				}
+
+				idx = item;
+				
+				instance->calculate_edit_control(*obj);
+			}
+		};
 
 		switch (msg) {
+
+			case WM_CHAR: {
+				if (wParam == VK_TAB)
+					return 0;
+
+				break;
+			}
 			case WM_KEYDOWN: {
 
-				if (wParam == VK_RETURN) { // enter key
+				if (wParam == VK_RETURN) {
+					commit_changes();
 
-					const int buffer_size = GetWindowTextLengthW(hwnd);
-					std::wstring buffer;
-
-					if (buffer_size > 0) {
-						buffer.resize(buffer_size + 1);
-
-						GetWindowTextW(hwnd, buffer.data(), buffer_size + 1);
-						buffer.resize(buffer_size);
-					}
-
-					obj->instance_->update_entry(*obj, buffer);
-					
 					DestroyWindow(hwnd);
 					return 0;
 				}
@@ -526,11 +580,30 @@ namespace List {
 					DestroyWindow(hwnd);
 					return 0;
 				}
+				else if (wParam == VK_TAB) {
+					commit_changes();
+
+					modify_control(List::EditControlPress::Tab);
+					return 0;
+				}
+				else if (wParam == VK_UP) {
+					commit_changes();
+
+					modify_control(List::EditControlPress::UpArrow);
+					return 0;
+				}
+				else if (wParam == VK_DOWN) {
+					commit_changes();
+
+					modify_control(List::EditControlPress::DownArrow);
+					return 0;
+				}
 
 				break;
 			}
 			case WM_KILLFOCUS: {
-				PostMessageW(hwnd, static_cast<UINT>(WM_KEYDOWN), VK_RETURN, 0);
+				commit_changes();
+				DestroyWindow(hwnd);
 				break;
 			}
 			case WM_DESTROY: {
@@ -542,8 +615,9 @@ namespace List {
 
 					obj->instance_->edit_ = NULL;
 
-					SetFocus(lv);
-					ListView_SetItemState(lv, obj->item_, LVIS_SELECTED, LVIS_SELECTED);
+					ListView_SetItemState(lv, obj->item_, LVIS_SELECTED | LVIS_FOCUSED, 
+						LVIS_SELECTED | LVIS_FOCUSED);
+					ListView_EnsureVisible(lv, obj->item_, FALSE);
 
 					delete obj;
 				}

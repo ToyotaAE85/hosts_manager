@@ -22,9 +22,10 @@ namespace List {
 		FromMemory
 	};
 
-	enum class UpdateField {
-		IpAddress,
-		Domains,
+	enum class EditControlPress {
+		UpArrow,
+		DownArrow,
+		Tab,
 	};
 
 	struct ColumnData {
@@ -50,7 +51,6 @@ namespace List {
 			std::int32_t item_{ -1 };
 			std::int32_t sbitem_{ -1 };
 			std::int32_t entry_idx_{ -1 };
-			UpdateField field_{ };
 		};
 
 	public:
@@ -105,6 +105,8 @@ namespace List {
 		void delete_selected_entry();
 
 		void update_entry(const edit_state& data, std::wstring_view str);
+
+		void calculate_edit_control(edit_state& state);
 
 	private:
 

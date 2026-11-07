@@ -316,10 +316,16 @@ namespace System {
 		buttons_.enable_buttons(inner_settings_.changes_performed = false);
 		update_self_title();
 		listView_.refresh_list(List::PopulateRows::FromFile);
+
 		Message::display(Message::Type::Info, Localization::Text::Info_ListReloadUpdate);
 	}
 
 	LRESULT MainWindow::MessageHandler(UINT msg, WPARAM wParam, LPARAM lParam) {
+
+		using Custom	= WmId::Custom;
+		using Control	= WmId::Control;
+		using MenuBar	= WmId::MenuBar;
+
 		switch (msg) {
 			case WM_CREATE: {
 				prepare_ui();
@@ -359,33 +365,33 @@ namespace System {
 			case WM_COMMAND: {
 				WORD wId{ LOWORD(wParam) };
 
-				WmId::MenuBar mId{ static_cast<WmId::MenuBar>(wId) };
+				MenuBar mId{ static_cast<MenuBar>(wId) };
 
-				if (mId > WmId::MenuBar::Min && mId < WmId::MenuBar::Max) {
+				if (mId > MenuBar::Min && mId < MenuBar::Max) {
 					menuBar_.message_handler(wId);
 					return 0;
 				}
 
-				WmId::Control cId{ static_cast<WmId::Control>(wId) };
+				Control cId{ static_cast<Control>(wId) };
 
-				if (cId == WmId::Control::ApplyFilter) {
+				if (cId == Control::ApplyFilter) {
 					flush_dns();
 				} 
-				else if (cId == WmId::Control::SaveEntry) {
+				else if (cId == Control::SaveEntry) {
 					save_data();
 				} 
-				else if (cId == WmId::Control::DiscardChanges) {
+				else if (cId == Control::DiscardChanges) {
 					handle_file_reload();
 				} 
-				else if (cId == WmId::Control::NewEntry) {
+				else if (cId == Control::NewEntry) {
 					SetFocus(listView_.hwnd());
 					listView_.insert_new_entry();
 				}
-				else if (cId == WmId::Control::DeleteEntry) {
+				else if (cId == Control::DeleteEntry) {
 					listView_.delete_selected_entry();
 				}
 
-				if (cId != WmId::Control::NewEntry) {
+				if (cId != Control::NewEntry) {
 					EnableWindow(buttons_.delete_, FALSE);
 					SetFocus(hwnd_);
 				}
@@ -431,67 +437,67 @@ namespace System {
 
 				if (vKey == MK_CONTROL) {
 					if (mDelta > 0) {
-						change_setting(WmId::Custom::Request_TextSize_Change, 
-							WmId::MenuBar::Text_IncreaseSize);
+						change_setting(Custom::Request_TextSize_Change, 
+							MenuBar::Text_IncreaseSize);
 					}
 					else if (mDelta < 0) {
-						change_setting(WmId::Custom::Request_TextSize_Change,
-							WmId::MenuBar::Text_DecreaseSize);
+						change_setting(Custom::Request_TextSize_Change,
+							MenuBar::Text_DecreaseSize);
 					}
 				}
 
 				break;
 			}
 
-			case static_cast<UINT>(WmId::Custom::Request_Language_Change): {
+			case static_cast<UINT>(Custom::Request_Language_Change): {
 
-				change_setting(WmId::Custom::Request_Language_Change, static_cast<WmId::MenuBar>(wParam));
+				change_setting(Custom::Request_Language_Change, static_cast<MenuBar>(wParam));
 				Message::display(Message::Type::Info, Localization::Text::Info_LanguageUpdate);
 
 				return 0;
 			} 
-			case static_cast<UINT>(WmId::Custom::Request_Filter_Change): {
+			case static_cast<UINT>(Custom::Request_Filter_Change): {
 				
-				change_setting(WmId::Custom::Request_Filter_Change, static_cast<WmId::MenuBar>(wParam));
+				change_setting(Custom::Request_Filter_Change, static_cast<MenuBar>(wParam));
 				Message::display(Message::Type::Info, Localization::Text::Info_ListRowsUpdate);
 
 				return 0;
 			}
-			case static_cast<UINT>(WmId::Custom::Request_TextSize_Change): {
-				change_setting(WmId::Custom::Request_TextSize_Change, static_cast<WmId::MenuBar>(wParam));
+			case static_cast<UINT>(Custom::Request_TextSize_Change): {
+				change_setting(Custom::Request_TextSize_Change, static_cast<MenuBar>(wParam));
 				return 0;
 			}
-			case static_cast<UINT>(WmId::Custom::Request_List_Reload): {
+			case static_cast<UINT>(Custom::Request_List_Reload): {
 				handle_file_reload();
 				return 0;
 			}
 
-			case static_cast<UINT>(WmId::Custom::Request_Clear_File): {
+			case static_cast<UINT>(Custom::Request_Clear_File): {
 				handle_file_cleanup();
 				return 0;
 			}
 
-			case static_cast<UINT>(WmId::Custom::Request_Backup_File): {
+			case static_cast<UINT>(Custom::Request_Backup_File): {
 				handle_file_backup();
 				return 0;
 			}
-			case static_cast<UINT>(WmId::Custom::Request_Restore_File): {
+			case static_cast<UINT>(Custom::Request_Restore_File): {
 				handle_file_restore();
 				return 0;
 			}
-			case static_cast<UINT>(WmId::Custom::ListMutated): {
+			case static_cast<UINT>(Custom::ListMutated): {
 				buttons_.enable_buttons(inner_settings_.changes_performed = true);
 				update_self_title();
 				return 0;
 			}
-			case static_cast<UINT>(WmId::Custom::ListSelected): {
+			case static_cast<UINT>(Custom::ListSelected): {
 
 				auto idx{ lParam };
 				EnableWindow(buttons_.delete_, idx != -1);
 
 				return 0;
 			}
-			case static_cast<UINT>(WmId::Custom::ListError): {
+			case static_cast<UINT>(Custom::ListError): {
 				handle_internal_error(FileInternals::ErrorData{
 					static_cast<Message::Type>(wParam),
 					static_cast<FileInternals::Error>(lParam)
