@@ -74,6 +74,7 @@ FileInternals::ReturnType<std::filesystem::path> to_temp(std::filesystem::path o
 	temp.replace_extension(L".tmp");
 
 	std::wofstream temp_file { temp };
+	temp_file.imbue(std::locale(".utf8"));
 
 	if (!temp_file)
 		return std::unexpected(FileInternals::ErrorData{ Message::Type::Info,FileInternals::Error::FILE_OPEN_FAILED});
@@ -85,14 +86,14 @@ FileInternals::ReturnType<std::filesystem::path> to_temp(std::filesystem::path o
 	};
 
 	for (const auto& line : vw) {
-		temp_file << std::format(L"{} {}", line.ip, line.domains) << L'\n';
+		temp_file << std::format(L"{} {}\n", line.ip, line.domains);
 
 		if (!temp_file) {
 			std::filesystem::remove(temp);
 			return std::unexpected(FileInternals::ErrorData{ Message::Type::Info, FileInternals::Error::FILE_WRITE_FAILED });
 		}
 	}
-
+	
 	temp_file.close();
 
 	if (!temp_file) {
@@ -124,6 +125,7 @@ namespace FileInternals {
 			return std::unexpected(ErrorData{ Message::Type::Info, Error::FILE_MISSING });
 
 		std::wifstream load{ obj };
+		load.imbue(std::locale(".utf8"));
 
 		if (!load)
 			return std::unexpected(ErrorData{ Message::Type::Info, Error::FILE_OPEN_FAILED });

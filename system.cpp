@@ -11,6 +11,8 @@ namespace System {
 	
 	MainWindow::MainWindow(HINSTANCE hInst) noexcept : hInstance_{ hInst } {}
 
+	HWND MainWindow::hwnd() const { return hwnd_; }
+
 	void MainWindow::initialize(int nCmdShow) {
 
 		Language::set(Language::Type::Spanish);

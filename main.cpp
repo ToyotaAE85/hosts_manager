@@ -7,8 +7,9 @@ int WINAPI wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE, _In_ PWSTR, _I
 
 	BOOL ret{ };
 
+	System::MainWindow obj{ hInstance };
+
 	try {
-		System::MainWindow obj{ hInstance };
 		obj.initialize(nCmdShow);
 
 		MSG msg{ };
@@ -19,8 +20,10 @@ int WINAPI wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE, _In_ PWSTR, _I
 		}
 	}
 	catch (const std::exception& e) {
-		MessageBoxA(nullptr, e.what(), "TERMINAL ERROR: ", MB_ICONERROR | MB_OK);
+		MessageBoxA(obj.hwnd(), e.what(), "TERMINAL ERROR: ", MB_ICONERROR | MB_OK);
 	}
+
+	
 
 	return ret;
 }

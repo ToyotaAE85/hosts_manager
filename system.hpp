@@ -37,6 +37,8 @@ namespace System {
 
 		MainWindow(HINSTANCE hInst) noexcept;
 
+		HWND hwnd() const;
+
 		void initialize(int);
 		
 	private:
