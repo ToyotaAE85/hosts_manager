@@ -31,7 +31,7 @@ namespace List {
 		hwnd_ = Win32Utility::create_window({
 				.className = WC_LISTVIEW,
 				.style = WS_CHILD | WS_VISIBLE | LVS_REPORT
-						 | LVS_NOSORTHEADER,
+						| LVS_NOSORTHEADER,
 				.hParent = parent,
 				.id = (std::uint64_t)WmId::ListView::List,
 				.hInst = GetModuleHandleW(NULL),
@@ -241,6 +241,7 @@ namespace List {
 					delete_selected_entry();
 				}
 				else if (key->wVKey == VK_ESCAPE) {
+					ListView_SetItemState(hwnd_, -1, 0, LVIS_SELECTED | LVIS_FOCUSED);
 					SetFocus(GetParent(hwnd_));
 				}
 				else if (key->wVKey == VK_RETURN) {
@@ -258,13 +259,17 @@ namespace List {
 						delete_selected_entry();
 					else if (key->wVKey == 'N')
 						insert_new_entry();	
+					else if (key->wVKey == 'S')
+						SendMessageW(GetParent(hwnd_), static_cast<UINT>(WmId::Custom::ListSave), 0, 0);
+					else if (key ->wVKey == 'R')
+						SendMessageW(GetParent(hwnd_), static_cast<UINT>(WmId::Custom::ListReload), 0, 0);
 				}
 				break;
 			}
-			case NM_KILLFOCUS: {
-				ListView_SetItemState(hwnd_, -1, 0, LVIS_SELECTED | LVIS_FOCUSED);
-				break;
-			}
+			//case NM_KILLFOCUS: {
+			//	ListView_SetItemState(hwnd_, -1, 0, LVIS_SELECTED | LVIS_FOCUSED);
+			//	break;
+			//}
 		}
 		return 0;
 	}
@@ -595,10 +600,11 @@ namespace List {
 					commit_changes();
 
 					SetFocus(GetParent(hwnd));
+
 					return 0;
 				}
 				else if (wParam == VK_ESCAPE) {
-					DestroyWindow(hwnd);
+					SetFocus(GetParent(hwnd));
 					return 0;
 				}
 				else if (wParam == VK_TAB) {
@@ -629,6 +635,7 @@ namespace List {
 			case WM_DESTROY: {
 
 				RemoveWindowSubclass(hwnd, ListView::edit_sub_class_procc, 0);
+				ListView_SetItemState(GetParent(hwnd), -1, 0, LVIS_SELECTED | LVIS_FOCUSED);
 
 				if (obj && obj->instance_) {
 					const HWND lv{ obj->instance_->hwnd() };

@@ -70,6 +70,8 @@ namespace WmId {
 		ListMutated,
 		ListSelected,
 		ListError,
+		ListSave,
+		ListReload,
 
 		Max = 0xBFFF
 	};

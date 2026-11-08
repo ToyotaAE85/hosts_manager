@@ -164,7 +164,10 @@ namespace System {
 								buttons_.enable_buttons(inner_settings_.changes_performed = true);
 								update_self_title();
 								listView_.refresh_list(List::PopulateRows::FromFile);
+								
 								Message::display(Message::Type::Info, Text::Info_BackupLoaded);
+							
+								(void)FileInternals::set_target_file(L"");
 							}
 						}
 
@@ -218,6 +221,10 @@ namespace System {
 	}
 
 	void MainWindow::save_data() {
+
+		if (!inner_settings_.changes_performed)
+			return;
+
 		auto res{ FileInternals::save_data(listView_.data()) };
 
 		if (!res) {
@@ -389,10 +396,6 @@ namespace System {
 				}
 				else if (cId == Control::DeleteEntry) {
 					listView_.delete_selected_entry();
-				}
-
-				if (cId != Control::NewEntry) {
-					EnableWindow(buttons_.delete_, FALSE);
 					SetFocus(hwnd_);
 				}
 
@@ -417,13 +420,15 @@ namespace System {
 			//}
 			case WM_KEYDOWN: {
 				if (GetAsyncKeyState(VK_CONTROL) & 0x8000) {
-					if (wParam == 'S' && inner_settings_.changes_performed == true)
+					if (wParam == 'S')
 						save_data();
 					else if (wParam == 'R')
 						handle_file_reload();
 				} 
 				else if (wParam == VK_DOWN || wParam == VK_UP) {
 					const HWND lv{ listView_.hwnd() };
+
+					ListView_SetItemState(lv, -1, 0, LVIS_SELECTED | LVIS_FOCUSED);
 
 					ListView_SetItemState(lv, 0, 
 						LVIS_SELECTED | LVIS_FOCUSED, LVIS_SELECTED | LVIS_FOCUSED);
@@ -507,6 +512,14 @@ namespace System {
 					static_cast<Message::Type>(wParam),
 					static_cast<FileInternals::Error>(lParam)
 				});
+				return 0;
+			}
+			case static_cast<UINT>(Custom::ListSave): {
+				save_data();
+				return 0;
+			}
+			case static_cast<UINT>(Custom::ListReload): {
+				handle_file_reload();
 				return 0;
 			}
 		}

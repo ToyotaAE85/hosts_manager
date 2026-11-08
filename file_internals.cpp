@@ -149,6 +149,9 @@ namespace FileInternals {
 	}
 
 	ReturnType<void> set_target_file(std::filesystem::path new_path) {
+		if (new_path.empty())
+			current_file.clear();
+
 		if (!std::filesystem::exists(new_path))
 			return std::unexpected(ErrorData{ Message::Type::Warning, Error::FILE_MISSING });
 		
