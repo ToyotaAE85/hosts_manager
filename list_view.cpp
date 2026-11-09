@@ -266,10 +266,6 @@ namespace List {
 				}
 				break;
 			}
-			//case NM_KILLFOCUS: {
-			//	ListView_SetItemState(hwnd_, -1, 0, LVIS_SELECTED | LVIS_FOCUSED);
-			//	break;
-			//}
 		}
 		return 0;
 	}

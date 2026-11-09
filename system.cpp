@@ -186,9 +186,12 @@ namespace System {
 
 		auto [type, err] { error };
 
-		[[maybe_unused]] int res{
+		int res{
 			Message::display(type, Localization::TextMap<decltype(err)>{}.map(err))
 		};
+
+		if (res == IDNO)
+			PostQuitMessage(0);
 	}
 
 	void MainWindow::flush_dns() {
